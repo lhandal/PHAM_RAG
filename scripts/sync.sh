@@ -131,14 +131,20 @@ export_supabase_data() {
     
     cd "$PROJECT_ROOT"
     
-    # Check if supabase is linked
-    if ! supabase status >/dev/null 2>&1; then
+    # Check if supabase project is linked (look for project-ref file)
+    if [ ! -f "supabase/.temp/project-ref" ]; then
         log $YELLOW "⚠️  Supabase project not linked. Skipping Supabase export."
         log $YELLOW "   Run 'supabase link --project-ref your-project-ref' to link the project."
         return 0
     fi
     
-    debug "Supabase project is linked"
+    local project_ref=$(cat supabase/.temp/project-ref 2>/dev/null || echo "")
+    if [ -z "$project_ref" ]; then
+        log $YELLOW "⚠️  Supabase project reference not found. Skipping Supabase export."
+        return 0
+    fi
+    
+    debug "Supabase project is linked with reference: $project_ref"
     
     # Export database schema
     log $BLUE "  📋 Exporting database schema..."
@@ -150,7 +156,7 @@ export_supabase_data() {
     
     # Generate TypeScript types
     log $BLUE "  📝 Generating TypeScript types..."
-    if supabase gen types typescript --project-id epsqmxjsfwcfrbrfhbdw > supabase/types/generated/database.types.ts 2>/dev/null; then
+    if supabase gen types typescript --project-id "$project_ref" > supabase/types/generated/database.types.ts 2>/dev/null; then
         log $GREEN "  ✅ TypeScript types generated"
     else
         log $YELLOW "  ⚠️  Failed to generate TypeScript types (continuing anyway)"
