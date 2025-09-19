@@ -79,6 +79,18 @@ GITHUB_TOKEN="your-github-token"
    - Generate an API key in your N8N instance
    - Tag relevant workflows with "PHAM RAG"
 
+## 📖 Documentation
+
+- **[README.md](README.md)** - Setup, usage, and maintenance (this file)
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Technical architecture and implementation details
+- **[N8N Workflows](n8n/workflows/)** - Exported workflow configurations
+
+## 🏗️ Architecture Overview
+
+This project implements a sophisticated **music industry RAG system** that combines document-based knowledge retrieval with real-time database analysis. The system features **hybrid search** (vector similarity + keyword matching), **multi-modal interface** supporting voice and text via Telegram, **intelligent database agent** for revenue/royalty analysis, and **bilingual support** for Spanish and English queries. Built with n8n workflow orchestration, Supabase vector database, and OpenAI models, it serves both human users and autonomous agents with production-grade reliability and auditability.
+
+For detailed technical architecture, implementation patterns, and developer guidance, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## 🎯 Core Components
 
 ### N8N Workflows
