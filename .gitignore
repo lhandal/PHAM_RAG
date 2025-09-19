@@ -1,2 +1,6 @@
 # n8n
 n8n/envmaps/*-secret.json
+
+# macOS
+.DS_Store
+**/.DS_Store
