@@ -150,7 +150,7 @@ export_supabase_data() {
     
     # Generate TypeScript types
     log $BLUE "  📝 Generating TypeScript types..."
-    if supabase gen types typescript --local > supabase/types/generated/database.types.ts 2>/dev/null; then
+    if supabase gen types typescript --project-id epsqmxjsfwcfrbrfhbdw > supabase/types/generated/database.types.ts 2>/dev/null; then
         log $GREEN "  ✅ TypeScript types generated"
     else
         log $YELLOW "  ⚠️  Failed to generate TypeScript types (continuing anyway)"
