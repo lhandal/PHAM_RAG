@@ -1,0 +1,391 @@
+{
+  "createdAt": "2025-08-13T23:28:06.590Z",
+  "updatedAt": "2025-09-19T19:20:10.000Z",
+  "id": "VXdYIlXAYbEx80si",
+  "name": "VECTOR SEARCH",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        272
+      ],
+      "id": "03f5162b-3782-444c-a195-56e1b4bcdcf0",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "Pp9eJdAVkRxMS1tu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"query_text\": \"<QUERY>\",\n  \"filter\": {\n    \"category\": \"<LABEL1>;<LABEL2>\"\n  },\n  \"lang\": \"<LANG>\",\n  \"semantic_weight\": 1,\n  \"full_text_weight\": 1,\n  \"rrf_k\": 50\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -96,
+        256
+      ],
+      "id": "35a57071-eed6-45bf-9145-e3ead7f15632",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"query\": \"example search text\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -640,
+        112
+      ],
+      "id": "7021f72b-2ae9-4610-bd10-d2e80a513cdd",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "input",
+              "value": "={{ $json.output.query_text }}"
+            },
+            {
+              "name": "model",
+              "value": "text-embedding-3-small"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        80,
+        112
+      ],
+      "id": "cafb6d09-bb36-44a2-b60e-063623926e98",
+      "name": "Generate Embedding From Query",
+      "credentials": {
+        "openAiApi": {
+          "id": "Pp9eJdAVkRxMS1tu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://epsqmxjsfwcfrbrfhbdw.supabase.co/functions/v1/hybrid-search-v2",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    p_query_text: $(\"LLM Formatting Query\").item.json.output.query_text,\n    p_query_embedding: $json.data[0].embedding,\n    p_match_count: 20,\n    p_filter:\n      $(\"LLM Formatting Query\").item.json.output.filter.category === \"N/A\" ||\n      !$(\"LLM Formatting Query\").item.json.output.filter.category\n        ? {}\n        : { category: $(\"LLM Formatting Query\").item.json.output.filter.category },\n    p_lang: $(\"LLM Formatting Query\").item.json.output.lang || \"auto\",\n    p_full_text_weight: $(\"LLM Formatting Query\").item.json.output.full_text_weight,\n    p_semantic_weight: $(\"LLM Formatting Query\").item.json.output.semantic_weight,\n    p_rrf_k: $(\"LLM Formatting Query\").item.json.output.rrf_k\n  }\n}}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        272,
+        112
+      ],
+      "id": "4909f832-a6d4-48ae-b76f-fc0c072a7a1f",
+      "name": "Trigger Hybrid Search",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "x4LxrvpTYJnVA2pF",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input from previous node\nconst query = $json.query || \"\";\n\n// Escape problematic quotes and normalize spacing\nconst escapedQuery = query\n  .replace(/\\\\/g, \"\\\\\\\\\") // escape backslashes\n  .replace(/\"/g, '\\\\\"')   // escape double quotes\n  .replace(/\\s+/g, \" \")   // normalize multiple spaces\n  .trim();\n\nreturn {\n  query: escapedQuery\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        112
+      ],
+      "id": "68df71ac-e011-4a61-aa2b-3c10a140d3b2",
+      "name": "Unquote Query for API Call"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.query}}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=From the user query/context, you will create the following information.\n\nFirst, analyze the ORIGINAL user text exactly as written to detect exact/lookup intent.\n- Treat it as **exact/lookup-y** if ANY of these are present in the original text:\n  • Quoted or escaped-quoted phrases: \", ', “ ”, ‘ ’, or sequences like \\\"...\\\"\n  • File-ish tokens: *.pdf, *.docx, ALLCAPS filenames, IDs, or codes\n  • Section/article cites: §, Art., “Clause 3(b)”, dates like 2021-03-15\n  • Explicit cues: exact phrase, “between quotes”, “literal”, filename, folio, expediente\n\nThen produce the JSON fields:\n\n- `query_text` (string): rewrite for best semantic search, **do not include literal quotes** (you may keep the phrase words, just unquoted).\n- `filter` (object): `category` as semicolon string from: PEER, Legal, Authors, SACM, EMMI, PHAM, ORFEON, EMROTH. If none, use \"N/A\".\n- `lang` (string): \"es\" or \"en\" (use \"en\" if PEER + clear English cues; else default \"es\"; use \"auto\" only if truly unsure).\n- `semantic_weight` (number), `full_text_weight` (number), `rrf_k` (integer) per rules below.\n\nRanking knobs (pick ONE profile):\n- **Exact/lookup-y detected** → `\"semantic_weight\": 1.2`, `\"full_text_weight\": 2.2`, `\"rrf_k\": 25`\n- **Conceptual/broad** → `\"semantic_weight\": 2.5`, `\"full_text_weight\": 1.0`, `\"rrf_k\": 50`\n- **Mixed** → `\"semantic_weight\": 2.0`, `\"full_text_weight\": 1.5`, `\"rrf_k\": 50`\n\nOutput rules:\n- Valid JSON only. No comments/Markdown.\n- `filter.category` like \"PEER;SACM\" (no spaces around `;`).\n- Don’t invent labels. No duplicates."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -240,
+        112
+      ],
+      "id": "caec9347-ee86-4275-874e-4ce489ec7176",
+      "name": "LLM Formatting Query"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cohere.ai/v2/rerank",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "cohereApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"rerank-v3.5\",\n  \"query\": \"{{ $('Unquote Query for API Call').first().json.query }}\",\n  \"top_n\": 10,\n  \"documents\": {{ JSON.stringify($json.documents) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        688,
+        112
+      ],
+      "id": "c32e2a9a-06db-401d-8fff-14d7b6cd110a",
+      "name": "Cohere Rerank",
+      "credentials": {
+        "cohereApi": {
+          "id": "LihgqSDZ9qkPYBvB",
+          "name": "CohereApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    documents: items.map(it => it.json.content || \"\")\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        112
+      ],
+      "id": "a3324658-b1f4-4cc1-b403-b1d0a2a1a86e",
+      "name": "Flatten Documents For Cohere API"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Keeps all fields from Hybrid Search results + adds rerank_index & rerank_score.\n */\n\nconst hybridDocs = $items('Trigger Hybrid Search', 0).map(i => i.json);\n\n// Normalize Cohere Rerank payload\nconst rrPayload = $items('Cohere Rerank', 0)[0]?.json ?? {};\nconst rrObj = Array.isArray(rrPayload) ? rrPayload[0] : rrPayload;\nconst rrResults = Array.isArray(rrObj?.results) ? rrObj.results : [];\n\n// Merge rerank data with full hybrid doc fields\nconst docsOrdered = rrResults\n  .map(({ index, relevance_score }) => {\n    const d = hybridDocs[index];\n    if (!d) return null;\n    return {\n      ...d, // keep all original fields like file_name, doc_lang, vector_score, etc.\n      rerank_index: index,\n      rerank_score: relevance_score\n    };\n  })\n  .filter(Boolean);\n\nreturn [{ json: { docs_ordered: docsOrdered } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        112
+      ],
+      "id": "bd85c76a-4d32-4f11-b8ff-21c212f88592",
+      "name": "Return Reranked to Agent"
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LLM Formatting Query",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "LLM Formatting Query",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Unquote Query for API Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Embedding From Query": {
+      "main": [
+        [
+          {
+            "node": "Trigger Hybrid Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Hybrid Search": {
+      "main": [
+        [
+          {
+            "node": "Flatten Documents For Cohere API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unquote Query for API Call": {
+      "main": [
+        [
+          {
+            "node": "LLM Formatting Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Formatting Query": {
+      "main": [
+        [
+          {
+            "node": "Generate Embedding From Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cohere Rerank": {
+      "main": [
+        [
+          {
+            "node": "Return Reranked to Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten Documents For Cohere API": {
+      "main": [
+        [
+          {
+            "node": "Cohere Rerank",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "Como son los porcentajes en el subpublishing agreement?"
+        }
+      }
+    ]
+  },
+  "versionId": "02cc7574-4525-476e-96b2-b1f2d946c276",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-08-13T23:28:06.597Z",
+      "updatedAt": "2025-08-13T23:28:06.597Z",
+      "role": "workflow:owner",
+      "workflowId": "VXdYIlXAYbEx80si",
+      "projectId": "pW0j4TI1SOQVORnV",
+      "project": {
+        "createdAt": "2025-07-07T19:18:24.190Z",
+        "updatedAt": "2025-07-07T19:18:27.110Z",
+        "id": "pW0j4TI1SOQVORnV",
+        "name": "Leandro Handal <lhandalb@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "projectRelations": [
+          {
+            "createdAt": "2025-07-07T19:18:24.190Z",
+            "updatedAt": "2025-07-07T19:18:24.190Z",
+            "userId": "5b31a86a-fc7b-4e79-bffb-cf27d7b4fc45",
+            "projectId": "pW0j4TI1SOQVORnV",
+            "user": {
+              "createdAt": "2025-07-07T19:18:22.699Z",
+              "updatedAt": "2025-09-19T18:55:24.000Z",
+              "id": "5b31a86a-fc7b-4e79-bffb-cf27d7b4fc45",
+              "email": "lhandalb@gmail.com",
+              "firstName": "Leandro",
+              "lastName": "Handal",
+              "personalizationAnswers": null,
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "userClaimedAiCredits": true,
+                "firstSuccessfulWorkflowId": "GDIE8JoG2AWRNSmZ",
+                "userActivatedAt": 1753511540930,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1755223367013
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2025-09-19",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-09-19T19:17:38.189Z",
+      "updatedAt": "2025-09-19T19:17:38.189Z",
+      "id": "f90lEV4XYD6Y8sg5",
+      "name": "PHAM RAG"
+    }
+  ]
+}

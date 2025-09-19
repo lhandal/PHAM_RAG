@@ -1,0 +1,2333 @@
+{
+  "createdAt": "2025-08-12T23:40:35.244Z",
+  "updatedAt": "2025-09-19T19:20:19.000Z",
+  "id": "EuJSxIu8eKcKo7lV",
+  "name": "PHAM RAG [BASIC]",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "allowFileUploads": true,
+          "allowedFilesMimeTypes": "*"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -9376,
+        32
+      ],
+      "id": "1aa5399c-9182-4e88-86a6-b59ddc37937c",
+      "name": "When chat message received",
+      "webhookId": "75c9d822-feea-4f2d-a603-7dfa8451b0c5"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an expert lawyer working in PHAM (Promotora Hispanoamericana de Música). \nYou will answer the user's questions based only on the information retrieved from the attached vector store.\n\n**Instructions:**\n1. Shorten the user query to its core meaning.\n2. Use the extracted passages from our knowledge base to form the most accurate answer.\n3. **Do not** mention the name of the source document unless the user explicitly asks for it or requests references.\n4. If you cannot find the answer in the provided documents, respond exactly with:  \n   `I don't know`\n\n**Output rules:**\n- Reply only with the final answer (no labels like \"Core query:\" or \"Final answer:\").\n- Keep it concise but accurate.\n- If mentioning a document (only when asked), quote its name exactly as retrieved.",
+          "maxIterations": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -9168,
+        32
+      ],
+      "id": "53ab517e-bc85-4907-bc7a-86e44dc8e199",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -9200,
+        224
+      ],
+      "id": "072ce09f-fb4b-4373-8b78-3f18478a46ec",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Pp9eJdAVkRxMS1tu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -9072,
+        256
+      ],
+      "id": "470a0e91-aaf6-4568-a94c-7521788b59a6",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.fileType }}",
+                    "rightValue": "docx",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "b4324590-cb7d-4df6-8e0f-486ec46c0d72"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "docx"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "57651ef2-19a1-453b-ab6b-3f6de391b709",
+                    "leftValue": "={{ $json.fileType }}",
+                    "rightValue": "pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "pdf"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "380fc3da-cf0f-429b-8475-e58f524b7ca0",
+                    "leftValue": "={{ $json.fileType }}",
+                    "rightValue": "html",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "html"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6944963f-3622-4d6b-bdf4-300299b633ed",
+                    "leftValue": "={{ $json.fileType }}",
+                    "rightValue": "csv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "csv"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c7541ff0-55f2-4823-bfbe-47de52b5cda2",
+                    "leftValue": "={{ $json.fileType }}",
+                    "rightValue": "xlsx",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "xlsx"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9960f461-2af8-4c2d-b5cb-4e6319492287",
+                    "leftValue": "={{ $json.fileType }}",
+                    "rightValue": "xls",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "xls"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -8496,
+        -1136
+      ],
+      "id": "2e6509ec-521c-4d90-892f-5e0043d4bd55",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -8048,
+        -1056
+      ],
+      "id": "f8db3c70-b037-4090-b65f-60dd4787b0d6",
+      "name": "Extract from PDF"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "slidesToFormat": "application/pdf"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -8944,
+        -1072
+      ],
+      "id": "b2a069cd-3906-4a0b-a3f5-d8a769f2efea",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "cnUDTslFmPffLLC6",
+          "name": "Google Drive lhandalb@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "record_manager_v2",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "google_drive_file_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Loop Over Items').item.json.id }}"
+            },
+            {
+              "keyName": "hash",
+              "condition": "eq",
+              "keyValue": "={{ $json.hash }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -6480,
+        -1072
+      ],
+      "id": "debcacce-98bd-4487-8016-ac61af653725",
+      "name": "Get many rows",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "x4LxrvpTYJnVA2pF",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "type": "SHA256",
+        "value": "={{ $json.file_name }} + ' — ' + {{ $json.content }}",
+        "dataPropertyName": "hash"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [
+        -6704,
+        -1072
+      ],
+      "id": "67b4c70c-876f-47db-a715-85fa0a2cb974",
+      "name": "Crypto"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "empty",
+                      "singleValue": true
+                    },
+                    "id": "4bf953c2-be59-4025-9379-4a8c443f7c3f"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "New File"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "bfcd4dcf-0255-4506-85c5-78de23a09ffc",
+                    "leftValue": "={{ $json.hash }}",
+                    "rightValue": "={{ $('Crypto').item.json.hash }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Changed Existing File"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3699b37d-8641-4609-b58b-b5cd0f0443fe",
+                    "leftValue": "={{ $json.hash }}",
+                    "rightValue": "={{ $('Crypto').item.json.hash }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Duplicate"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -6272,
+        -1088
+      ],
+      "id": "d9708686-75d1-4fd7-b35f-2f0c31f40d54",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "documents_v2",
+        "filterType": "string",
+        "filterString": "=metadata->>file_id=like.*{{ $('Loop Over Items').item.json.id }}*"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -6048,
+        -1088
+      ],
+      "id": "8f1bc15e-7e42-49b9-9397-3dcd3e7c22fa",
+      "name": "Delete Previous Vectors",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x4LxrvpTYJnVA2pF",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "record_manager_v2",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Get many rows').item.json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "hash",
+              "fieldValue": "={{ $('Crypto').item.json.hash }}"
+            },
+            {
+              "fieldId": "file_name",
+              "fieldValue": "={{ $('Save File Name and Binary').item.json.originalFileName }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -5600,
+        -1088
+      ],
+      "id": "f686a14a-007f-4c60-bd3f-da541c8b5c07",
+      "name": "Update Record Manager",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x4LxrvpTYJnVA2pF",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -5824,
+        -1088
+      ],
+      "id": "4cfffe3d-be13-4c36-a4f7-b064dabad9b4",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{ \n  \"document_summary_big\": \"<A comprehensive, 2-3 parragraph summary of the entire document>\",\n  \"document_summary_small\": \"<A concise, 2-3 sentence summary of the entire document>\",\n  \"category\": [\"<A list of relevant categories like PEER, Legal, SACM, etc.>\", \"<...>\"],\n  \"timeframe\": \"<The most salient effective date in YYYY-MM-DD format, or null>\",\n  \"lang\": \"<'en' or 'es'>\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -5232,
+        -1088
+      ],
+      "id": "b4b34dea-a753-47fe-928d-54cf6d4c74e9",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5",
+          "mode": "list",
+          "cachedResultName": "gpt-5"
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -5376,
+        -1056
+      ],
+      "id": "9efecfda-687c-4b12-9271-cf96a9d076f7",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "Pp9eJdAVkRxMS1tu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.compression",
+      "typeVersion": 1.1,
+      "position": [
+        -8048,
+        -1248
+      ],
+      "id": "dd8aa223-8863-4fc7-8167-2ddba422147c",
+      "name": "Compression"
+    },
+    {
+      "parameters": {
+        "jsCode": "const bin = items[0].binary.data;\nconst fileName = bin.fileName || 'unknown.docx';\n\nbin.fileName = fileName.replace(/\\.docx$/i, '.zip');\nbin.fileExtension = 'zip';\nbin.mimeType = 'application/zip';\n\nreturn [{\n  json: {\n    originalFileName: fileName // ✅ carry original filename in JSON\n  },\n  binary: {\n    data: bin\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -8272,
+        -1248
+      ],
+      "id": "8be856bf-c777-4a51-9ae6-56838ee8c803",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pick_document_xml  (Run Once for All Items)\nconst result = [];\n\nfor (const file of Object.values(items[0].binary)) {\n  if (file.fileName === 'document.xml') {\n    result.push({ binary: { data: file } });\n    break;            // found it, stop looping\n  }\n}\n\nreturn result; "
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7824,
+        -1248
+      ],
+      "id": "1100f2a2-91ee-4374-aff3-baf11f534d7b",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "operation": "xml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -7600,
+        -1248
+      ],
+      "id": "55788285-0508-45f9-bab8-e997269bdf9c",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const xml = items[0].json.data;\nconst fileName = $('Compression').first().json.originalFileName || 'Unknown.docx';\n\nconst paraRegex = /<w:p[^>]*?>([\\s\\S]*?)<\\/w:p>/g;\nconst wTRegex = /<w:t[^>]*?>(.*?)<\\/w:t>/g;\n\n// Minimal HTML entity decoding using DOM-level trick\nfunction decodeHtmlEntities(str) {\n  return str\n    .replace(/&quot;/g, '\"')\n    .replace(/&amp;/g, '&')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&apos;/g, \"'\")\n    .replace(/&#39;/g, \"'\")\n    .replace(/&nbsp;/g, ' ');\n}\n\nconst paragraphs = [];\nlet pMatch;\n\nwhile ((pMatch = paraRegex.exec(xml))) {\n  const inner = pMatch[1];\n  const parts = [];\n\n  let tMatch;\n  while ((tMatch = wTRegex.exec(inner))) {\n    const decoded = decodeHtmlEntities(tMatch[1]);\n    parts.push(decoded);\n  }\n\n  const text = parts.join('').replace(/\\s+/g, ' ').trim();\n  if (text) paragraphs.push(text);\n}\n\nreturn [{\n  json: {\n    fileName,\n    paragraphs,\n    text: paragraphs.join('\\n\\n')\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7376,
+        -1248
+      ],
+      "id": "c2ebfd22-2ea2-48ed-afac-3cf69cdb6630",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect the first non-empty input\nfor (const item of items) {\n  if (item && Object.keys(item.json).length > 0) {\n    return [item];\n  }\n}\n\n// fallback: return empty if truly nothing was passed\nreturn [{ json: { fileName: 'Unknown', text: '' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -6928,
+        -1072
+      ],
+      "id": "f8c04a22-bd1a-4d12-ae16-6fcfa2c90f2e",
+      "name": "Combine Results"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ca60d24-ab10-4b77-8977-f3dffe30c9c2",
+              "name": "file_name",
+              "value": "={{ $json.fileName }}",
+              "type": "string"
+            },
+            {
+              "id": "fa60dffd-28bf-4902-9a16-f3aba42af510",
+              "name": "content",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -7152,
+        -1248
+      ],
+      "id": "66884c32-2ee2-40a6-b84d-2166e0091546",
+      "name": "Set docx variables"
+    },
+    {
+      "parameters": {
+        "html": "={{ $json.data }}",
+        "destinationKey": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        -7376,
+        -880
+      ],
+      "id": "a44f9d10-17af-4ac0-b670-6704d64d3e77",
+      "name": "Markdown"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ca60d24-ab10-4b77-8977-f3dffe30c9c2",
+              "name": "file_name",
+              "value": "={{ $('Save File Name and Binary').item.json.originalFileName }}",
+              "type": "string"
+            },
+            {
+              "id": "fa60dffd-28bf-4902-9a16-f3aba42af510",
+              "name": "content",
+              "value": "={{ $json.text || $('Extract text').item.json.extractedText }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -7152,
+        -1056
+      ],
+      "id": "c117fa2a-5ea2-49fd-b8b0-179225d14f4f",
+      "name": "Set pdf variables"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ca60d24-ab10-4b77-8977-f3dffe30c9c2",
+              "name": "file_name",
+              "value": "={{ $('Save File Name and Binary').item.json.originalFileName }}",
+              "type": "string"
+            },
+            {
+              "id": "fa60dffd-28bf-4902-9a16-f3aba42af510",
+              "name": "content",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -7152,
+        -880
+      ],
+      "id": "34cb54cc-8c82-40ab-b7f0-e1082d9c7fad",
+      "name": "Set html variables"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "options": {
+          "keepSource": "binary"
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -7600,
+        -880
+      ],
+      "id": "1843ea61-f979-497e-bf23-463734eba46a",
+      "name": "Extract from Text File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mistralAi",
+      "typeVersion": 1,
+      "position": [
+        -7376,
+        -1056
+      ],
+      "id": "09700997-810b-4cdd-a2fd-e634bc112338",
+      "name": "Extract text",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "fIE6CZDWfG7XEaFE",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "da18e7ba-aaf1-4b43-9cde-767f02f67cb8",
+              "leftValue": "={{ $json.text.replace(/[\\n\\r\\s]/g, '').length }}",
+              "rightValue": 50,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -7824,
+        -1056
+      ],
+      "id": "d521ef56-2c53-428b-bde7-34d430e5c156",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const b = item.binary || {};\n  const k = Object.keys(b)[0];\n  item.json.originalFileName =\n    (k && b[k]?.fileName) || item.json.fileName || item.json.name || null;\n  item.json.fileType = item.binary.data.fileExtension\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -8720,
+        -1072
+      ],
+      "id": "2b51fe3a-7420-4625-975e-3cd2b5bfcdf7",
+      "name": "Save File Name and Binary"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Loop Over Items').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -7600,
+        -1056
+      ],
+      "id": "c04f2cc8-a5db-4286-a8a5-7c7db091458f",
+      "name": "Download file for OCR",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "cnUDTslFmPffLLC6",
+          "name": "Google Drive lhandalb@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -9264,
+        -1072
+      ],
+      "id": "afbf1b67-0aee-4377-9009-7fd47c59903e",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -9712,
+        -1072
+      ],
+      "id": "53e2e7eb-7f7a-4e1b-a6bd-f730a2db8103",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "value": "1UK9jkXGsN5ubvBo7oRtE6yJ9gWdnpB1I",
+            "mode": "list",
+            "cachedResultName": "RAG Folder",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1UK9jkXGsN5ubvBo7oRtE6yJ9gWdnpB1I"
+          },
+          "whatToSearch": "files",
+          "includeTrashed": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -9488,
+        -1072
+      ],
+      "id": "61fda5df-b529-47fd-af12-84c19aac62c4",
+      "name": "List All Files in RAG Folder",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "cnUDTslFmPffLLC6",
+          "name": "Google Drive lhandalb@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Download file').item.json.id }}",
+          "mode": "id"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1otE8Z6H7QcEaNflNBrk-MtcVjBizwnMK",
+          "mode": "list",
+          "cachedResultName": "Processed",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1otE8Z6H7QcEaNflNBrk-MtcVjBizwnMK"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -4560,
+        -720
+      ],
+      "id": "f00d541d-2662-4dd2-a6fb-a9bddf04debd",
+      "name": "Move Processed",
+      "executeOnce": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "cnUDTslFmPffLLC6",
+          "name": "Google Drive lhandalb@gmail.com"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteFile",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Download file').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -5632,
+        -880
+      ],
+      "id": "13255e50-df40-465e-b252-a8101d4ece22",
+      "name": "Delete a file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "cnUDTslFmPffLLC6",
+          "name": "Google Drive lhandalb@gmail.com"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Download file').item.json.id }}",
+          "mode": "id"
+        },
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1otE8Z6H7QcEaNflNBrk-MtcVjBizwnMK",
+          "mode": "list",
+          "cachedResultName": "Processed",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1otE8Z6H7QcEaNflNBrk-MtcVjBizwnMK"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -5632,
+        -736
+      ],
+      "id": "b47f5db7-8e06-4496-8664-96bcbc460fa4",
+      "name": "Move file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "cnUDTslFmPffLLC6",
+          "name": "Google Drive lhandalb@gmail.com"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "57edb2ef-72a4-4d04-8b0b-4fabda371e14",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -5936,
+        -864
+      ],
+      "id": "6b946dec-a3ee-4a73-932d-a1fa384c14fc",
+      "name": "in Processed",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $json.file_name }}",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1otE8Z6H7QcEaNflNBrk-MtcVjBizwnMK",
+            "mode": "list",
+            "cachedResultName": "Processed",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1otE8Z6H7QcEaNflNBrk-MtcVjBizwnMK"
+          },
+          "includeTrashed": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -6112,
+        -864
+      ],
+      "id": "9fdeeaf1-61cc-4e83-a005-a1742f39417a",
+      "name": "Search In Processed",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "cnUDTslFmPffLLC6",
+          "name": "Google Drive lhandalb@gmail.com"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "mode": "list",
+            "value": "My Drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "value": "1otE8Z6H7QcEaNflNBrk-MtcVjBizwnMK",
+            "mode": "list",
+            "cachedResultName": "Processed",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1otE8Z6H7QcEaNflNBrk-MtcVjBizwnMK"
+          },
+          "whatToSearch": "files",
+          "includeTrashed": true
+        },
+        "options": {
+          "fields": [
+            "trashed",
+            "explicitlyTrashed",
+            "id",
+            "name"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -9488,
+        -1328
+      ],
+      "id": "2e940570-a714-4cb8-aa60-e8ecedf46684",
+      "name": "List All Deleted Files",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "cnUDTslFmPffLLC6",
+          "name": "Google Drive lhandalb@gmail.com"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter for explicitlyTrashed === true and aggregate IDs into a CSV\nconst ids = $input.all()\n  .filter(item => item.json.explicitlyTrashed === true)\n  .map(item => item.json.id);\n\n// Join with commas (no quotes) for Supabase \"In\" condition\nreturn [{\n  json: {\n    deletedIds: ids.join(',')\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -9248,
+        -1328
+      ],
+      "id": "1f61e317-824e-4477-8bb3-fe558cbe6764",
+      "name": "Aggregate All Deleted IDs",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "record_manager_v2",
+        "filterType": "string",
+        "filterString": "=google_drive_file_id=in.(\"{{ $json.deletedIds.split(',').join('\",\"') }}\")"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -8816,
+        -1584
+      ],
+      "id": "686ac05f-89b4-40df-bda3-5ff592e7d986",
+      "name": "Get Deleted From Record Manager",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "x4LxrvpTYJnVA2pF",
+          "name": "Supabase account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "documents_v2",
+        "filterType": "string",
+        "filterString": "=metadata->>file_id=in.(\"{{ $json.deletedIds.split(',').join('\",\"') }}\")"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -8816,
+        -1408
+      ],
+      "id": "c3d72963-0433-4f0e-a17f-3600c0c12aa8",
+      "name": "Get Deleted From Documents",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "x4LxrvpTYJnVA2pF",
+          "name": "Supabase account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "14eff53e-4c4a-471b-a069-488b244e09e5",
+              "leftValue": "={{ $json.deletedIds }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -9104,
+        -1344
+      ],
+      "id": "557805a4-bdea-4a10-953c-4e5527ab034f",
+      "name": "If1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -8160,
+        192
+      ],
+      "id": "ce5bf344-1671-410c-b1a8-80a0628110ee",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "Pp9eJdAVkRxMS1tu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"query_text\": \"<QUERY>\",\n  \"filter\": {\n    \"category\": \"<LABEL1>;<LABEL2>\"\n  },\n  \"lang\": \"<LANG>\",\n  \"semantic_weight\": 1,\n  \"full_text_weight\": 1,\n  \"rrf_k\": 50\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -8016,
+        192
+      ],
+      "id": "01af30f8-26e6-499d-90e0-0ad6bdeabeaf",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "description": "Call this to fetch data from our vector store knowledge base.",
+        "workflowId": {
+          "__rl": true,
+          "value": "Ra8I06NZXeRNmoUc",
+          "mode": "list",
+          "cachedResultName": "PHAM RAG v2"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ $fromAI('query', $json.query || $json.chatInput || 'test', 'string') }}"
+          },
+          "matchingColumns": [
+            "query"
+          ],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -8928,
+        256
+      ],
+      "id": "a131ce64-3b18-4741-88dc-41d86c02cd05",
+      "name": "Query Vector Store",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n  \"query\": \"example search text\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -8560,
+        32
+      ],
+      "id": "43c44e1e-de81-45e1-8571-5b140beab499",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "input",
+              "value": "={{ $json.output.query_text }}"
+            },
+            {
+              "name": "model",
+              "value": "text-embedding-3-small"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -7840,
+        32
+      ],
+      "id": "c4cbd02f-fad1-4295-8c87-cdda41c45b07",
+      "name": "Generate Embedding From Query",
+      "credentials": {
+        "openAiApi": {
+          "id": "Pp9eJdAVkRxMS1tu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://epsqmxjsfwcfrbrfhbdw.supabase.co/functions/v1/hybrid-search-v2",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n  {\n    p_query_text: $(\"LLM Formatting Query\").item.json.output.query_text,\n    p_query_embedding: $json.data[0].embedding,\n    p_match_count: 20,\n    p_filter:\n      $(\"LLM Formatting Query\").item.json.output.filter.category === \"N/A\" ||\n      !$(\"LLM Formatting Query\").item.json.output.filter.category\n        ? {}\n        : { category: $(\"LLM Formatting Query\").item.json.output.filter.category },\n    p_lang: $(\"LLM Formatting Query\").item.json.output.lang || \"auto\",\n    p_full_text_weight: $(\"LLM Formatting Query\").item.json.output.full_text_weight,\n    p_semantic_weight: $(\"LLM Formatting Query\").item.json.output.semantic_weight,\n    p_rrf_k: $(\"LLM Formatting Query\").item.json.output.rrf_k\n  }\n}}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -7648,
+        32
+      ],
+      "id": "7fa686ba-d405-46b1-b4a6-b7f618a4d6ea",
+      "name": "Trigger Hybrid Search",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "x4LxrvpTYJnVA2pF",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input from previous node\nconst query = $json.query || \"\";\n\n// Escape problematic quotes and normalize spacing\nconst escapedQuery = query\n  .replace(/\\\\/g, \"\\\\\\\\\") // escape backslashes\n  .replace(/\"/g, '\\\\\"')   // escape double quotes\n  .replace(/\\s+/g, \" \")   // normalize multiple spaces\n  .trim();\n\nreturn {\n  query: escapedQuery\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -8352,
+        32
+      ],
+      "id": "21d52bd8-9770-49dd-8e9f-90ec3e8bf2e7",
+      "name": "Unquote Query for API Call"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.query}}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=From the user query/context, you will create the following information.\n\nFirst, analyze the ORIGINAL user text exactly as written to detect exact/lookup intent.\n- Treat it as **exact/lookup-y** if ANY of these are present in the original text:\n  • Quoted or escaped-quoted phrases: \", ', “ ”, ‘ ’, or sequences like \\\"...\\\"\n  • File-ish tokens: *.pdf, *.docx, ALLCAPS filenames, IDs, or codes\n  • Section/article cites: §, Art., “Clause 3(b)”, dates like 2021-03-15\n  • Explicit cues: exact phrase, “between quotes”, “literal”, filename, folio, expediente\n\nThen produce the JSON fields:\n\n- `query_text` (string): rewrite for best semantic search, **do not include literal quotes** (you may keep the phrase words, just unquoted).\n- `filter` (object): `category` as semicolon string from: PEER, Legal, Authors, SACM, EMMI, PHAM, ORFEON, EMROTH. If none, use \"N/A\".\n- `lang` (string): \"es\" or \"en\" (use \"en\" if PEER + clear English cues; else default \"es\"; use \"auto\" only if truly unsure).\n- `semantic_weight` (number), `full_text_weight` (number), `rrf_k` (integer) per rules below.\n\nRanking knobs (pick ONE profile):\n- **Exact/lookup-y detected** → `\"semantic_weight\": 1.2`, `\"full_text_weight\": 2.2`, `\"rrf_k\": 25`\n- **Conceptual/broad** → `\"semantic_weight\": 2.5`, `\"full_text_weight\": 1.0`, `\"rrf_k\": 50`\n- **Mixed** → `\"semantic_weight\": 2.0`, `\"full_text_weight\": 1.5`, `\"rrf_k\": 50`\n\nOutput rules:\n- Valid JSON only. No comments/Markdown.\n- `filter.category` like \"PEER;SACM\" (no spaces around `;`).\n- Don’t invent labels. No duplicates."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -8160,
+        32
+      ],
+      "id": "0a72d87a-b8a0-4878-b015-a34b632a0dfa",
+      "name": "LLM Formatting Query"
+    },
+    {
+      "parameters": {
+        "content": "\nDECLARE\n  v_lang text := COALESCE(NULLIF(TRIM(p_lang), ''), 'auto');\n  v_rrf  integer := GREATEST(p_rrf_k, 1);\nBEGIN\n  RETURN QUERY\n  WITH q AS (\n    SELECT\n      plainto_tsquery('english', unaccent(p_query_text))  AS q_en,\n      plainto_tsquery('spanish', unaccent(p_query_text))  AS q_es\n  ),\n  -- Normalize/relax filter; ignore when null/empty/\"N/A\"\n  norm_filter AS (\n    SELECT CASE\n      WHEN p_filter IS NULL\n        OR jsonb_typeof(p_filter) <> 'object'\n        OR NULLIF(TRIM(COALESCE(p_filter->>'category','')), '') IS NULL\n        OR upper(p_filter->>'category') = 'N/A'\n      THEN '{}'::jsonb\n      ELSE jsonb_build_object('category', replace(p_filter->>'category',' ',''))\n    END AS f\n  ),\n  kv AS (\n    SELECT key, f->>key AS raw\n    FROM norm_filter, LATERAL jsonb_object_keys(f) AS k(key)\n  ),\n  kv_values AS (\n    SELECT key, trim(val) AS val\n    FROM kv, LATERAL unnest(string_to_array(COALESCE(raw,''), ';')) AS u(val)\n    WHERE COALESCE(raw,'') <> ''\n  ),\n  -- Apply metadata filters if any (category = semicolon-separated list)\n  filtered AS (\n    SELECT\n      d.id         AS doc_id,\n      d.content    AS content,\n      d.metadata   AS metadata,\n      d.lang       AS doc_lang,\n      d.embedding  AS embedding,\n      d.fts_en     AS fts_en,\n      d.fts_es     AS fts_es\n    FROM documents_v2 d\n    WHERE NOT EXISTS (\n      SELECT 1\n      FROM (SELECT key FROM norm_filter, LATERAL jsonb_object_keys(f) AS k(key)) k\n      WHERE NOT EXISTS (\n        SELECT 1\n        FROM kv_values v\n        WHERE v.key = k.key\n          AND (\n            (jsonb_typeof(d.metadata -> v.key) = 'array' AND (d.metadata -> v.key) ? v.val)\n            OR (d.metadata ->> v.key) ILIKE ('%' || v.val || '%')\n          )\n      )\n    )\n  ),\n  -- Vector (semantic) side\n  vector_ranked AS (\n    SELECT\n      f.doc_id,\n      (1 - (f.embedding <=> p_query_embedding))::double precision AS vector_score,\n      dense_rank() OVER (ORDER BY (1 - (f.embedding <=> p_query_embedding)) DESC)::int AS vector_rank\n    FROM filtered f\n  ),\n  -- Full‑text side: always score both EN & ES, then boost preferred lang\n  keyword_scored AS (\n    SELECT\n      f.doc_id,\n      /* base scores from both language indexes */\n      ts_rank_cd(f.fts_en, (SELECT q_en FROM q)) AS s_en,\n      ts_rank_cd(f.fts_es, (SELECT q_es FROM q)) AS s_es\n    FROM filtered f\n  ),\n  keyword_ranked AS (\n    SELECT\n      ks.doc_id,\n      (\n        /* Use the stronger of the two, then add a small bonus for the preferred lang */\n        GREATEST(ks.s_en, ks.s_es)\n        + CASE\n            WHEN v_lang = 'en' THEN 0.05 * ks.s_en\n            WHEN v_lang = 'es' THEN 0.05 * ks.s_es\n            ELSE 0\n          END\n      )::double precision AS keyword_score,\n      /* rank by the boosted score */\n      dense_rank() OVER (\n        ORDER BY\n          (GREATEST(ks.s_en, ks.s_es)\n           + CASE\n               WHEN v_lang = 'en' THEN 0.05 * ks.s_en\n               WHEN v_lang = 'es' THEN 0.05 * ks.s_es\n               ELSE 0\n             END\n          ) DESC\n      )::int AS keyword_rank\n    FROM keyword_scored ks\n  ),\n  combined AS (\n    SELECT\n      f.doc_id,\n      f.content,\n      f.metadata,\n      f.doc_lang,\n      vr.vector_score,\n      kr.keyword_score,\n      COALESCE(vr.vector_rank,  1000000000) AS vector_rank,\n      COALESCE(kr.keyword_rank, 1000000000) AS keyword_rank\n    FROM filtered f\n    LEFT JOIN vector_ranked  vr ON vr.doc_id = f.doc_id\n    LEFT JOIN keyword_ranked kr ON kr.doc_id = f.doc_id\n  )\n  SELECT\n    c.doc_id                                 AS id,\n    c.content                                AS content,\n    c.metadata                               AS metadata,\n    c.metadata->>'file_name'                 AS file_name,\n    c.doc_lang                               AS doc_lang,\n    c.vector_score                           AS vector_score,\n    c.keyword_score                          AS keyword_score,\n    c.vector_rank                            AS vector_rank,\n    c.keyword_rank                           AS keyword_rank,\n    (\n      p_semantic_weight / (v_rrf + c.vector_rank)::double precision\n      +\n      p_full_text_weight / (v_rrf + c.keyword_rank)::double precision\n    )::double precision                       AS final_score\n  FROM combined c\n  ORDER BY final_score DESC\n  LIMIT p_match_count;\nEND;\n",
+        "height": 448,
+        "width": 592
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -10208,
+        -304
+      ],
+      "id": "03c8ee3e-cf3e-4f45-84ca-c3bc159601e2",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cohere.ai/v2/rerank",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "cohereApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"rerank-v3.5\",\n  \"query\": \"{{ $('Unquote Query for API Call').first().json.query }}\",\n  \"top_n\": 10,\n  \"documents\": {{ JSON.stringify($json.documents) }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -7232,
+        32
+      ],
+      "id": "e59ae796-5a6d-45cc-b902-49be10600b24",
+      "name": "Cohere Rerank",
+      "credentials": {
+        "cohereApi": {
+          "id": "LihgqSDZ9qkPYBvB",
+          "name": "CohereApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    documents: items.map(it => it.json.content || \"\")\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7440,
+        32
+      ],
+      "id": "4e1cc5e1-1420-46c7-9ce8-08ec8d243e44",
+      "name": "Flatten Documents For Cohere API"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Keeps all fields from Hybrid Search results + adds rerank_index & rerank_score.\n */\n\nconst hybridDocs = $items('Trigger Hybrid Search', 0).map(i => i.json);\n\n// Normalize Cohere Rerank payload\nconst rrPayload = $items('Cohere Rerank', 0)[0]?.json ?? {};\nconst rrObj = Array.isArray(rrPayload) ? rrPayload[0] : rrPayload;\nconst rrResults = Array.isArray(rrObj?.results) ? rrObj.results : [];\n\n// Merge rerank data with full hybrid doc fields\nconst docsOrdered = rrResults\n  .map(({ index, relevance_score }) => {\n    const d = hybridDocs[index];\n    if (!d) return null;\n    return {\n      ...d, // keep all original fields like file_name, doc_lang, vector_score, etc.\n      rerank_index: index,\n      rerank_score: relevance_score\n    };\n  })\n  .filter(Boolean);\n\nreturn [{ json: { docs_ordered: docsOrdered } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -7024,
+        32
+      ],
+      "id": "08ed193f-10e9-4957-b572-5ea24955bc38",
+      "name": "Return Reranked to Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=# File Name\n{{ $('Combine Results').item.json.file_name }}\n\n# File Contents\n{{ $('Combine Results').item.json.content }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are an expert legal document analyst. Your task is to analyze the provided document and return a single, valid JSON object.\n\n\nHeader:\n- file_name: <FILE_NAME>\n- language_hint: <unknown|es|en>\n\nDocument (UTF-8 string):\n<FULL_TEXT>\n\n\nThe JSON object must have the following structure:\n\n{ \n  \"document_summary_big\": \"<A comprehensive, 2-3 parragraph summary of the entire document>\",\n  \"document_summary_small\": \"<A concise, 2-3 sentence summary of the entire document>\",\n  \"category\": [\"<A list of relevant categories like PEER, Legal, SACM, etc.>\", \"<...>\"],\n  \"timeframe\": \"<The most salient effective date in YYYY-MM-DD format, or null>\",\n  \"lang\": \"<'en' or 'es'>\"\n}\n\n\nProcedure (follow internally; output JSON only)\n\t1.\tDo not alter FULL_TEXT\n\t2.\tMeta fields.\n    \t•\tlang ∈ {“es”,“en”} (best guess).\n    \t•\tcategory ⊂ {PEER, Legal, Authors, SACM, EMMI, PHAM, ORFEON, EMROTH}; [] if unsure.\n    \t•\ttimeframe = most salient effective date in ISO (YYYY-MM-DD) if present; else null.\n    \t•\tdocument_summary = one parragraph.\n\t\nStrict rules:\n- category ⊂ {PEER, Legal, Authors, SACM, EMMI, PHAM, ORFEON, EMROTH}.\n- lang ∈ {\"es\",\"en\"}.\n- timeframe is a string (YYYY-MM-DD) or null (not an array)."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -5376,
+        -1216
+      ],
+      "id": "838da604-1350-4e3f-b152-c37fc4684978",
+      "name": "Summarize and Add Metadata"
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $('Combine Results').item.json.content }}",
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "file_id",
+                "value": "={{ $('Download file').item.json.id }}"
+              },
+              {
+                "name": "category",
+                "value": "={{ $json.output.category }}"
+              },
+              {
+                "name": "file_name",
+                "value": "={{ $('Combine Results').item.json.file_name }}"
+              },
+              {
+                "name": "summary",
+                "value": "={{ $json.output.document_summary_small }}"
+              },
+              {
+                "name": "lang",
+                "value": "={{ $json.output.lang || 'es'}}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -4976,
+        -992
+      ],
+      "id": "9e9bab53-2850-4ff3-ae3d-bdc6874f5188",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 200,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        -4976,
+        -848
+      ],
+      "id": "2131a18a-41a6-4344-93b8-1ea7b62044cd",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "options": {
+          "dimensions": 1536
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -5088,
+        -992
+      ],
+      "id": "6d025267-9e4c-43ab-a0c5-2fe5175b6946",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "Pp9eJdAVkRxMS1tu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents_v2",
+          "mode": "list",
+          "cachedResultName": "documents_v2"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -5056,
+        -1216
+      ],
+      "id": "e8419538-a5cb-4c0e-9157-b977b3cb2268",
+      "name": "Upload to Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x4LxrvpTYJnVA2pF",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from Text File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Save File Name and Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crypto": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Summarize and Add Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Delete Previous Vectors",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search In Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Previous Vectors": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Record Manager": {
+      "main": [
+        [
+          {
+            "node": "Summarize and Add Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Update Record Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Summarize and Add Metadata",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Summarize and Add Metadata",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compression": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Compression",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Set docx variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Results": {
+      "main": [
+        [
+          {
+            "node": "Crypto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from PDF": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set docx variables": {
+      "main": [
+        [
+          {
+            "node": "Combine Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Markdown": {
+      "main": [
+        [
+          {
+            "node": "Set html variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set pdf variables": {
+      "main": [
+        [
+          {
+            "node": "Combine Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from Text File": {
+      "main": [
+        [
+          {
+            "node": "Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set html variables": {
+      "main": [
+        [
+          {
+            "node": "Combine Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Set pdf variables",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download file for OCR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract text": {
+      "main": [
+        [
+          {
+            "node": "Set pdf variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save File Name and Binary": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file for OCR": {
+      "main": [
+        [
+          {
+            "node": "Extract text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "List All Files in RAG Folder",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "List All Deleted Files",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List All Files in RAG Folder": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move Processed": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "in Processed": {
+      "main": [
+        [
+          {
+            "node": "Delete a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Move file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search In Processed": {
+      "main": [
+        [
+          {
+            "node": "in Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a file": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move file": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List All Deleted Files": {
+      "main": [
+        [
+          {
+            "node": "Aggregate All Deleted IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate All Deleted IDs": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Get Deleted From Record Manager",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Deleted From Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LLM Formatting Query",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "LLM Formatting Query",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Unquote Query for API Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Embedding From Query": {
+      "main": [
+        [
+          {
+            "node": "Trigger Hybrid Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unquote Query for API Call": {
+      "main": [
+        [
+          {
+            "node": "LLM Formatting Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Formatting Query": {
+      "main": [
+        [
+          {
+            "node": "Generate Embedding From Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Hybrid Search": {
+      "main": [
+        [
+          {
+            "node": "Flatten Documents For Cohere API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatten Documents For Cohere API": {
+      "main": [
+        [
+          {
+            "node": "Cohere Rerank",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cohere Rerank": {
+      "main": [
+        [
+          {
+            "node": "Return Reranked to Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize and Add Metadata": {
+      "main": [
+        [
+          {
+            "node": "Upload to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Upload to Supabase",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Upload to Supabase",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Move Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "Como son los porcentajes en el subpublishing agreement?"
+        }
+      }
+    ]
+  },
+  "versionId": "7b10b409-a8b7-41e7-ae39-d5ebbf7a426c",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-08-12T23:40:35.249Z",
+      "updatedAt": "2025-08-12T23:40:35.249Z",
+      "role": "workflow:owner",
+      "workflowId": "EuJSxIu8eKcKo7lV",
+      "projectId": "pW0j4TI1SOQVORnV",
+      "project": {
+        "createdAt": "2025-07-07T19:18:24.190Z",
+        "updatedAt": "2025-07-07T19:18:27.110Z",
+        "id": "pW0j4TI1SOQVORnV",
+        "name": "Leandro Handal <lhandalb@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "projectRelations": [
+          {
+            "createdAt": "2025-07-07T19:18:24.190Z",
+            "updatedAt": "2025-07-07T19:18:24.190Z",
+            "userId": "5b31a86a-fc7b-4e79-bffb-cf27d7b4fc45",
+            "projectId": "pW0j4TI1SOQVORnV",
+            "user": {
+              "createdAt": "2025-07-07T19:18:22.699Z",
+              "updatedAt": "2025-09-19T18:55:24.000Z",
+              "id": "5b31a86a-fc7b-4e79-bffb-cf27d7b4fc45",
+              "email": "lhandalb@gmail.com",
+              "firstName": "Leandro",
+              "lastName": "Handal",
+              "personalizationAnswers": null,
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "userClaimedAiCredits": true,
+                "firstSuccessfulWorkflowId": "GDIE8JoG2AWRNSmZ",
+                "userActivatedAt": 1753511540930,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1755223367013
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2025-09-19",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-09-19T19:17:38.189Z",
+      "updatedAt": "2025-09-19T19:17:38.189Z",
+      "id": "f90lEV4XYD6Y8sg5",
+      "name": "PHAM RAG"
+    }
+  ]
+}

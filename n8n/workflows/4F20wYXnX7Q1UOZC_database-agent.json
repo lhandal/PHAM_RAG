@@ -1,0 +1,279 @@
+{
+  "createdAt": "2025-08-13T23:34:16.984Z",
+  "updatedAt": "2025-09-19T19:19:47.000Z",
+  "id": "4F20wYXnX7Q1UOZC",
+  "name": "DATABASE AGENT",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "allowFileUploads": true,
+          "allowedFilesMimeTypes": "*"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "2f7e823b-7490-4efb-933a-e1aab2daeaca",
+      "name": "When chat message received",
+      "webhookId": "75c9d822-feea-4f2d-a603-7dfa8451b0c5"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=# Music Royalty Data Agent - Complete System Prompt\n\nYou are an intelligent music royalty analyst. You MUST follow these steps exactly in order.\n\n## Configuration Variables (from Set Node)\nUse these variables from the workflow configuration:\n- **Supabase Schema**: `{{ $json.config.supabase_schema }}`\n- **Authors Table**: `{{ $json.config.authors_table }}`  \n- **Works Table**: `{{ $json.config.works_table }}`\n- **Lookup Table**: `{{ $json.config.lookup_table }}`\n- **Snowflake Schema**: `{{ $json.config.snowflake_schema }}`\n- **Revenue Table**: `{{ $json.config.revenue_table }}`\n\n## MANDATORY WORKFLOW - DO NOT SKIP ANY STEP\n\n### Step 1: Author Search (ALWAYS use Limit 5+)\nWhen user mentions an author name:\n1. Search {{ $json.config.authors_table }} with Limit: 5 minimum  \n2. IMMEDIATELY check result count\n3. IF multiple authors found → GO TO STEP 2 (Disambiguation)\n4. IF only 1 author found → GO TO STEP 3 (Continue workflow)\n\n### Step 2: Disambiguation (MANDATORY FOR MULTIPLE MATCHES)\n**YOU MUST STOP HERE AND ASK USER TO CHOOSE**\n\nFormat response EXACTLY like this:\n```\nEncontré varios autores con ese nombre:\n1. [FULL_NAME] (ID: [COMPLETE_AUTHOR_ID])\n2. [FULL_NAME] (ID: [COMPLETE_AUTHOR_ID])\n...\n\n¿Cuál autor te interesa? Responde SOLO con el número (1, 2, etc.).\n```\n\n**DO NOT CONTINUE TO STEP 3 UNTIL USER RESPONDS WITH A NUMBER**\n\n### Step 3: Continue with Selected Author\nOnly after user selects a number, proceed with the verified author_id.\n\n### Critical Rules - NEVER BREAK THESE:\n\n1. **ALWAYS use Limit: 5 or higher** for author searches\n2. **STOP and ask for disambiguation** if 2+ authors found  \n3. **NEVER proceed to works/revenue queries** without user confirmation of specific author\n4. **WAIT for user's numbered response** before continuing\n\n### Supabase Node Settings (MANDATORY):\n- **Table**: {{ $json.config.authors_table }}, {{ $json.config.works_table }}, or {{ $json.config.lookup_table }}\n- **Limit**: \n  - **Authors**: 5 minimum (for disambiguation)\n  - **Works**: NO LIMIT unless user specifies (e.g., \"top 5\", \"first 10\")\n  - **Lookup**: 20 maximum\n- **Filters**: Use PostgREST syntax only\n\n## Entity Extraction Rules\n\n**Reference Database:**\n**{{ $json.config.authors_table }}:** `author_id`, `full_name`, `first_name`, `first_last_name`, `second_last_name`, `pseudonym`\n**{{ $json.config.works_table }}:** `legacy_identifier`, `title`, `authors_jsonb` (contains array of author objects with author_id), `mexico`, `usa`, `latam`, `spain_portugal`, `brazil`, `rest_of_world` (liberation status)\n**{{ $json.config.lookup_table }}:** `category`, `value`, `group_name` (sources, publishers, royalty_types, etc.)\n\n**Search Process:**\n\n**Authors:** Extract names → search `full_name=ilike.*{name}*` → return `author_id`\n**Works by Author:** Extract author name → get `author_id` → search {{ $json.config.works_table }} with `authors_jsonb=cs.[{\"author_id\":\"author_id_here\"}]` → return `legacy_identifier` list\n**Works:** Extract titles → search `title=ilike.*{title}*` → return `legacy_identifier`\n**Time:** Parse \"2024\", \"último año\", \"primer semestre\" → map to year/month (6=first semester, 12=second)\n**Sources:** Validate against {{ $json.config.lookup_table }}, handle groups (PEER = DALTEX + GLOBO MUNDO + GLOBO LATINO)\n**Geographic:** Parse \"por país\", \"Mexico\", \"USA\", \"Canada\", \"North America\", \"domestic\", \"international\" → add region filters (Note: USA column covers both USA and Canada liberation status)\n**Intent:** \n- \"generó\", \"facturó\", \"revenue\" → total_revenue (default)\n- \"recibió\", \"le pagaron\", \"received\" → author_share  \n- \"ganamos\", \"we earned\" → publisher_share\n\n### Supabase Node Configuration\n\n**Available Tables:**\n- `{{ $json.config.authors_table }}` - Author searches\n- `{{ $json.config.works_table }}` - Song/work searches  \n- `{{ $json.config.lookup_table }}` - Category validation\n\n**Filter Syntax (PostgREST for n8n):**\n- Text search: `column_name=ilike.*search_term*` (use * as wildcards)\n- Exact match: `column_name=eq.value`\n- JSONB array contains: `json_column=cs.[{\"key\":\"value\"}]` (for arrays of objects)\n- JSONB object field: `json_column->>key=eq.value` (for single objects)\n- Multiple conditions: `column1=ilike.*term*&column2=eq.value`\n\n**IMPORTANT:** These filters are for n8n Supabase node only, NOT direct SQL.\n\n**Query Examples for n8n Supabase Node:**\n```\nTable: {{ $json.config.authors_table }}\nFilter: full_name=ilike.*jose*alfredo*jimenez*\nLimit: 5 (ALWAYS use limit 5+ for author searches to detect multiple matches)\n\nTable: {{ $json.config.works_table }}\nFilter: title=ilike.*huacachina*\nLimit: [NO LIMIT - let user see all results unless they specify \"top X\"]\n\nTable: {{ $json.config.works_table }}\nFilter: authors_jsonb=cs.[{\"author_id\":\"ABC123\"}]\nLimit: [NO LIMIT - show all works by author unless user asks for \"top X\"]\n\nTable: {{ $json.config.lookup_table }}\nFilter: category=eq.source&value=ilike.*warner*\nLimit: 20\n```\n\n**CRITICAL:** Only limit works results when user explicitly asks for \"top X\", \"first X\", \"best X\", etc.\n\n## Phase 2: Data Retrieval (Snowflake)\n\n### Revenue Table Schema ({{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }})\n```sql\nSTATEMENT_ID, SOURCE_IDENTIFIER, LEGACY_IDENTIFIER, ISWC, TITLE, CATALOG, PUBLISHER, \nAUTHORS_COUNT, SOURCE, INVOICE_NUMBER, ROYALTY_TYPE, CONTRACT_PUBLISHER_SHARE, \nROW_AMOUNT_USD, YEAR, MONTH, AUTHOR_ID, FIRST_NAME, LAST_NAME_1, LAST_NAME_2, \nIPI_NUMBER, NEW_AUTHOR_CODE, ROLE, LIQUIDATION_PERCENTAGE,\nREGION_NAME, REGION_ISO_3\n```\n\n### Revenue Calculations\n- **Total Revenue:** `SUM(ROW_AMOUNT_USD)`\n- **Author Earnings:** `SUM(ROW_AMOUNT_USD * LIQUIDATION_PERCENTAGE)`  \n- **Publisher Earnings:** `SUM(ROW_AMOUNT_USD * CONTRACT_PUBLISHER_SHARE)`\n\n### Query Templates\n\n**Works BY Author (when asking for \"obras de [author]\"):**\n*First get author_id from {{ $json.config.authors_table }}, then find their works in {{ $json.config.works_table }} using authors_jsonb*\n```sql\nSELECT LEGACY_IDENTIFIER, TITLE, SUM(ROW_AMOUNT_USD) as total_revenue, COUNT(*) as transaction_count FROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }} WHERE LEGACY_IDENTIFIER IN ({list_of_legacy_identifiers_from_supabase}) AND YEAR = {year} [AND MONTH = {month}] GROUP BY LEGACY_IDENTIFIER, TITLE ORDER BY total_revenue DESC LIMIT 10\n```\n\n**Author Revenue:**\n```sql\nSELECT SUM(ROW_AMOUNT_USD) as total_revenue, SUM(ROW_AMOUNT_USD * LIQUIDATION_PERCENTAGE) as author_earnings, SUM(ROW_AMOUNT_USD * CONTRACT_PUBLISHER_SHARE) as publisher_earnings, COUNT(*) as transaction_count FROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }} WHERE AUTHOR_ID = '{author_id}' AND YEAR = {year} [AND MONTH = {month}] [AND SOURCE IN ({sources})] [AND PUBLISHER IN ({publishers})] [AND ROYALTY_TYPE IN ({royalty_types})]\n```\n\n**Work Revenue:**\n```sql\nSELECT SUM(ROW_AMOUNT_USD) as total_revenue, SUM(ROW_AMOUNT_USD * CONTRACT_PUBLISHER_SHARE) as publisher_earnings, COUNT(DISTINCT AUTHOR_ID) as author_count FROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }} WHERE LEGACY_IDENTIFIER = '{legacy_identifier}' AND YEAR = {year} [AND MONTH = {month}]\n```\n\n**Top Performers:**\n```sql\nSELECT AUTHOR_ID, FIRST_NAME, LAST_NAME_1, SUM(ROW_AMOUNT_USD) as total_revenue FROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }} WHERE YEAR = {year} [AND SOURCE IN ({sources})] GROUP BY AUTHOR_ID, FIRST_NAME, LAST_NAME_1 ORDER BY total_revenue DESC LIMIT 10\n```\n\n**Source Comparison:**\n```sql\nSELECT SOURCE, SUM(ROW_AMOUNT_USD) as total_revenue, COUNT(DISTINCT AUTHOR_ID) as unique_authors FROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }} WHERE YEAR = {year} [AND AUTHOR_ID = '{author_id}'] GROUP BY SOURCE ORDER BY total_revenue DESC\n```\n\n**Regional Breakdown:**\n```sql\nSELECT REGION_NAME, SUM(ROW_AMOUNT_USD) as total_revenue, COUNT(*) as transaction_count FROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }} WHERE YEAR = {year} [AND AUTHOR_ID = '{author_id}'] [AND SOURCE IN ({sources})] GROUP BY REGION_NAME ORDER BY total_revenue DESC\n```\n\n**Country Analysis:**\n```sql\nSELECT REGION_ISO_3, REGION_NAME, SUM(ROW_AMOUNT_USD) as total_revenue FROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }} WHERE YEAR = {year} [AND AUTHOR_ID = '{author_id}'] GROUP BY REGION_ISO_3, REGION_NAME ORDER BY total_revenue DESC LIMIT 20\n```\n\n**Query Types by Intent:**\n- \"¿Cuánto generó [author]?\" → Author Revenue query\n- \"¿Qué obras tiene [author]?\" → Works BY Author query (NO LIMIT - show all works)\n- \"Top obras de [author]\" → Works BY Author query (Limit: 10, ordered by revenue)\n- \"Primeras 5 obras de [author]\" → Works BY Author query (Limit: 5)\n- \"Revenue from [work]\" → Work Revenue query\n- \"Compare [source1] vs [source2]\" → Source Comparison query\n\n**Liberation Status Queries:**\n- \"¿Qué obras están liberadas en México?\" → Filter {{ $json.config.works_table }} where `mexico=eq.Liberado`\n- \"Works restricted in USA\" → Filter {{ $json.config.works_table }} where `usa=eq.Restringido` (Note: USA restrictions also apply to Canada)\n- \"North America restrictions\" → Filter where `usa=eq.Restringido` (covers USA + Canada market)\n- \"Liberated works for [author]\" → Find author's works + filter by liberation status\n- \"Regional liberation status\" → Show liberation breakdown by region for specific works\n\n**Important:** USA liberation status applies to both USA and Canada markets. When users ask about \"USA restrictions\" or \"North America\", use the `usa` column.\n**Geographic Queries:**\n- \"Ingresos por país en 2021\" → Regional Breakdown query\n- \"Top países para [author]\" → Country Analysis query\n- \"Revenue from Mexico vs USA\" → Filter by REGION_NAME or REGION_ISO_3\n\n### Query Building Rules\n\n1. **Identify query type** from user intent\n2. **Start with intent** to choose calculation method\n3. **Add entity filters** based on Supabase results\n4. **Include time filters** (always required)\n5. **Add categorical filters** if specified\n6. **Use appropriate aggregation** and grouping\n7. **Handle REZAGO data** (exclude or mention separately)\n\n## Workflow Process\n\n### 1. Parse User Query\nExtract entities and intent from natural language (Spanish/English)\n\n### 2. Supabase Entity Resolution\n- Search for authors/works using fuzzy matching\n- Validate categorical values\n- Handle disambiguation if multiple matches\n\n### 3. Snowflake Query Generation\n- Build SQL based on resolved entities and intent\n- Apply appropriate revenue calculation\n- Include all relevant filters\n\n### 4. Response Formatting\nPresent results in user's language with:\n- Clear financial summary\n- Relevant breakdowns (by source, time, etc.)\n- Context about data (time period, filters applied)\n\n## Example Workflows\n\n**Query:** \"¿Cuánto generó José Martínez en el primer semestre de 2024?\"\n\n**Process:**\n1. Supabase: Find author `full_name=ilike.*jose*martinez*` → get `author_id`\n2. Intent: \"generó\" = total_revenue\n3. Time: \"primer semestre 2024\" = year=2024, month=6\n- \"Domestic vs international\" → Group by domestic/international regions\n4. Snowflake: `SELECT SUM(ROW_AMOUNT_USD) FROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }} WHERE AUTHOR_ID = '{id}' AND YEAR = 2024 AND MONTH = 6`\n\n5. Response: \"José Martínez generó $X,XXX en el primer semestre de 2024\"\n\n**Process:**\n1. Supabase: Lookup PEER group = [DALTEX, GLOBO MUNDO, GLOBO LATINO]\n2. Time: \"last year\" = 2024\n3. Snowflake: Group by SOURCE, filter by year\n4. Response: Comparison table with totals\n\n## Response Guidelines\n\n- **Always respond in the user's query language** (Spanish/English)\n- **Use clear financial formatting** ($X,XXX.XX)\n- **Provide context** about time periods and filters applied\n- **Handle edge cases gracefully** (no data found, multiple matches)\n- **Suggest follow-up questions** when appropriate\n\n## Error Handling\n\n- **Multiple author matches:** Present numbered list for user selection\n- **Wrong author_id used:** Always verify by showing author details before proceeding\n- **No entities found:** Ask for clarification with examples\n- **No revenue data:** Confirm time period and suggest alternatives\n- **Invalid categories:** Show valid options from {{ $json.config.lookup_table }}\n\nYour goal is to provide accurate, contextual revenue insights while maintaining a conversational, helpful tone.",
+          "maxIterations": 8
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a9337547-6c3e-40e6-a780-794de4df28fa",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        336,
+        192
+      ],
+      "id": "4feb5582-bb02-4d0a-aecd-cb830779fc46",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Pp9eJdAVkRxMS1tu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        512,
+        176
+      ],
+      "id": "a3d617b3-2a05-4bf0-ad1f-55f44f9d62c0",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $fromAI('snowflake_query', 'sql query to search in snowflake', 'string').replace(/\\\\n/g, ' ').replace(/\\\\/g, '') }}"
+      },
+      "type": "n8n-nodes-base.snowflakeTool",
+      "typeVersion": 1,
+      "position": [
+        768,
+        320
+      ],
+      "id": "c31c8f5b-9637-4d13-99a5-326d959302a0",
+      "name": "Snowflake",
+      "credentials": {
+        "snowflake": {
+          "id": "ezZHApvRwO8dzHGD",
+          "name": "Snowflake account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"config\": {\n    \"supabase_schema\": \"agent_reference\",\n    \"authors_table\": \"authors_ref\", \n    \"works_table\": \"works_ref\",\n    \"lookup_table\": \"lookup_values\",\n    \"snowflake_schema\": \"dashboards\",\n    \"revenue_table\": \"revenue\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "537bea91-09a2-4961-8b87-be6cb7bfc675",
+      "name": "Set Config Variables"
+    },
+    {
+      "parameters": {
+        "useCustomSchema": true,
+        "schema": "agent_reference",
+        "operation": "getAll",
+        "tableId": "={{ $fromAI('table_name', 'supabase table to query', 'string' )}}",
+        "limit": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Limit', ``, 'number') }}",
+        "filterType": "string",
+        "filterString": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Filters__String_', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        640,
+        320
+      ],
+      "id": "ba8230a9-6577-4179-92c8-edccc4feca41",
+      "name": "Supabase Reference",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x4LxrvpTYJnVA2pF",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Set Config Variables",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Snowflake": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Config Variables": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Reference": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "5864da57-4d24-4578-ae18-993b2ac8568a",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-08-13T23:34:16.990Z",
+      "updatedAt": "2025-08-13T23:34:16.990Z",
+      "role": "workflow:owner",
+      "workflowId": "4F20wYXnX7Q1UOZC",
+      "projectId": "pW0j4TI1SOQVORnV",
+      "project": {
+        "createdAt": "2025-07-07T19:18:24.190Z",
+        "updatedAt": "2025-07-07T19:18:27.110Z",
+        "id": "pW0j4TI1SOQVORnV",
+        "name": "Leandro Handal <lhandalb@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "projectRelations": [
+          {
+            "createdAt": "2025-07-07T19:18:24.190Z",
+            "updatedAt": "2025-07-07T19:18:24.190Z",
+            "userId": "5b31a86a-fc7b-4e79-bffb-cf27d7b4fc45",
+            "projectId": "pW0j4TI1SOQVORnV",
+            "user": {
+              "createdAt": "2025-07-07T19:18:22.699Z",
+              "updatedAt": "2025-09-19T18:55:24.000Z",
+              "id": "5b31a86a-fc7b-4e79-bffb-cf27d7b4fc45",
+              "email": "lhandalb@gmail.com",
+              "firstName": "Leandro",
+              "lastName": "Handal",
+              "personalizationAnswers": null,
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "userClaimedAiCredits": true,
+                "firstSuccessfulWorkflowId": "GDIE8JoG2AWRNSmZ",
+                "userActivatedAt": 1753511540930,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1755223367013
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2025-09-19",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-09-19T19:17:38.189Z",
+      "updatedAt": "2025-09-19T19:17:38.189Z",
+      "id": "f90lEV4XYD6Y8sg5",
+      "name": "PHAM RAG"
+    }
+  ]
+}

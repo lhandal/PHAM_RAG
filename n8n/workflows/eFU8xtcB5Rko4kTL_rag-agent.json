@@ -1,0 +1,236 @@
+{
+  "createdAt": "2025-08-13T23:31:39.549Z",
+  "updatedAt": "2025-09-19T19:19:38.000Z",
+  "id": "eFU8xtcB5Rko4kTL",
+  "name": "RAG AGENT",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "allowFileUploads": true,
+          "allowedFilesMimeTypes": "*"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "50214e89-18c1-4eaa-8bc4-2047d6f9ed55",
+      "name": "When chat message received",
+      "webhookId": "75c9d822-feea-4f2d-a603-7dfa8451b0c5"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an expert lawyer working in PHAM (Promotora Hispanoamericana de Música). \nYou will answer the user's questions based only on the information retrieved from the attached vector store.\n\n**Instructions:**\n1. Shorten the user query to its core meaning. (clip thinks like 'in the music industry', this is all company data)\n2. Use the extracted passages from our knowledge base to form the most accurate answer.\n3. **Do not** mention the name of the source document unless the user explicitly asks for it or requests references.\n4. If you cannot find the answer in the provided documents, respond stating you couldn't find the answer and ask for more context on the file or keywords. \n5. If the user asks something that can't be provided at the first couple of tries, add quote marks to the part of the question that sounds quotable or important to try and force a keyword search. \n\n**Output rules:**\n- Reply only with the final answer (no labels like \"Core query:\" or \"Final answer:\").\n- Keep it concise but accurate.\n- If mentioning a document (only when asked), quote its name exactly as retrieved.",
+          "maxIterations": 8
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ae26171e-6b9d-455c-ac69-efea17472810",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        176,
+        192
+      ],
+      "id": "3da7334b-3b88-40a0-af8f-8bfd0fc1d3be",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Pp9eJdAVkRxMS1tu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        224
+      ],
+      "id": "1e53a38d-84d8-496d-894e-12857fa3f106",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "description": "Call this to fetch data from our vector store knowledge base.",
+        "workflowId": {
+          "__rl": true,
+          "value": "VXdYIlXAYbEx80si",
+          "mode": "list",
+          "cachedResultName": "VECTOR SEARCH"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ $fromAI('query', $json.query || $json.chatInput || 'test', 'string') }}"
+          },
+          "matchingColumns": [
+            "query"
+          ],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        224
+      ],
+      "id": "666966ae-5a5e-4165-81c3-753191b01c60",
+      "name": "Query Vector Store",
+      "executeOnce": false
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "992e149f-6d5e-4ead-b9cf-733125dccd8c",
+  "triggerCount": 0,
+  "shared": [
+    {
+      "createdAt": "2025-08-13T23:31:39.555Z",
+      "updatedAt": "2025-08-13T23:31:39.555Z",
+      "role": "workflow:owner",
+      "workflowId": "eFU8xtcB5Rko4kTL",
+      "projectId": "pW0j4TI1SOQVORnV",
+      "project": {
+        "createdAt": "2025-07-07T19:18:24.190Z",
+        "updatedAt": "2025-07-07T19:18:27.110Z",
+        "id": "pW0j4TI1SOQVORnV",
+        "name": "Leandro Handal <lhandalb@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "projectRelations": [
+          {
+            "createdAt": "2025-07-07T19:18:24.190Z",
+            "updatedAt": "2025-07-07T19:18:24.190Z",
+            "userId": "5b31a86a-fc7b-4e79-bffb-cf27d7b4fc45",
+            "projectId": "pW0j4TI1SOQVORnV",
+            "user": {
+              "createdAt": "2025-07-07T19:18:22.699Z",
+              "updatedAt": "2025-09-19T18:55:24.000Z",
+              "id": "5b31a86a-fc7b-4e79-bffb-cf27d7b4fc45",
+              "email": "lhandalb@gmail.com",
+              "firstName": "Leandro",
+              "lastName": "Handal",
+              "personalizationAnswers": null,
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "userClaimedAiCredits": true,
+                "firstSuccessfulWorkflowId": "GDIE8JoG2AWRNSmZ",
+                "userActivatedAt": 1753511540930,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1755223367013
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2025-09-19",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-09-19T19:17:38.189Z",
+      "updatedAt": "2025-09-19T19:17:38.189Z",
+      "id": "f90lEV4XYD6Y8sg5",
+      "name": "PHAM RAG"
+    }
+  ]
+}
