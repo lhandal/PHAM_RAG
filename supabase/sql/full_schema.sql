@@ -456,6 +456,25 @@ CREATE TABLE IF NOT EXISTS "public"."documents_v2" (
 ALTER TABLE "public"."documents_v2" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."liberation_reference" (
+    "Clave Obra" bigint,
+    "Version" "text",
+    "Titulo" "text",
+    "Editora" "text",
+    "Catalogo" "text",
+    "Fecha Contrato" "text",
+    "Mexico" "text",
+    "USA" "text",
+    "Latam" "text",
+    "España" "text",
+    "Brasil" "text",
+    "ROW" "text"
+);
+
+
+ALTER TABLE "public"."liberation_reference" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "public"."record_manager" (
     "id" bigint NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
@@ -573,6 +592,9 @@ CREATE OR REPLACE TRIGGER "trg_set_lang_from_metadata" BEFORE INSERT OR UPDATE O
 ALTER TABLE "public"."documents" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."liberation_reference" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."record_manager" ENABLE ROW LEVEL SECURITY;
 
 
@@ -640,6 +662,12 @@ GRANT ALL ON SEQUENCE "public"."documents_id_seq" TO "service_role";
 GRANT ALL ON TABLE "public"."documents_v2" TO "anon";
 GRANT ALL ON TABLE "public"."documents_v2" TO "authenticated";
 GRANT ALL ON TABLE "public"."documents_v2" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."liberation_reference" TO "anon";
+GRANT ALL ON TABLE "public"."liberation_reference" TO "authenticated";
+GRANT ALL ON TABLE "public"."liberation_reference" TO "service_role";
 
 
 

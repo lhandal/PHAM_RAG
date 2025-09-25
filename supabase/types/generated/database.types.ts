@@ -68,6 +68,51 @@ export type Database = {
         }
         Relationships: []
       }
+      liberation_reference: {
+        Row: {
+          Brasil: string | null
+          Catalogo: string | null
+          "Clave Obra": number | null
+          Editora: string | null
+          España: string | null
+          "Fecha Contrato": string | null
+          Latam: string | null
+          Mexico: string | null
+          ROW: string | null
+          Titulo: string | null
+          USA: string | null
+          Version: string | null
+        }
+        Insert: {
+          Brasil?: string | null
+          Catalogo?: string | null
+          "Clave Obra"?: number | null
+          Editora?: string | null
+          España?: string | null
+          "Fecha Contrato"?: string | null
+          Latam?: string | null
+          Mexico?: string | null
+          ROW?: string | null
+          Titulo?: string | null
+          USA?: string | null
+          Version?: string | null
+        }
+        Update: {
+          Brasil?: string | null
+          Catalogo?: string | null
+          "Clave Obra"?: number | null
+          Editora?: string | null
+          España?: string | null
+          "Fecha Contrato"?: string | null
+          Latam?: string | null
+          Mexico?: string | null
+          ROW?: string | null
+          Titulo?: string | null
+          USA?: string | null
+          Version?: string | null
+        }
+        Relationships: []
+      }
       record_manager: {
         Row: {
           created_at: string

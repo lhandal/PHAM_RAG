@@ -353,7 +353,7 @@
             "projectId": "pW0j4TI1SOQVORnV",
             "user": {
               "createdAt": "2025-07-07T19:18:22.699Z",
-              "updatedAt": "2025-09-22T18:10:47.000Z",
+              "updatedAt": "2025-09-25T02:03:37.000Z",
               "id": "5b31a86a-fc7b-4e79-bffb-cf27d7b4fc45",
               "email": "lhandalb@gmail.com",
               "firstName": "Leandro",
@@ -372,7 +372,7 @@
               },
               "disabled": false,
               "mfaEnabled": false,
-              "lastActiveAt": "2025-09-22",
+              "lastActiveAt": "2025-09-24",
               "isPending": false
             }
           }
