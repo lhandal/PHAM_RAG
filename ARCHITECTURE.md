@@ -16,6 +16,8 @@ This project implements a **production-grade Retrieval-Augmented Generation (RAG
 
 The architecture is designed for both **agentic automation** (n8n orchestrations, Supabase functions, Snowflake queries) and **human interaction** (chat interface, Telegram integration). Core principles: precision, auditability, and adaptability to legal/contract data in both Spanish and English.
 
+**NEW: MCP (Model Context Protocol) Enhancement** - The system now features advanced GPT-5-mini integration with multi-modal input processing, enabling seamless voice transcription, intelligent response routing, and enhanced context management across all interaction channels.
+
 ---
 
 ## Architecture & Technical Workflow
@@ -92,14 +94,22 @@ The system includes a sophisticated **database agent** that automatically determ
   - **Data analysis queries**: "¿Cuánto generó José Alfredo Jiménez en 2024?" → Snowflake
   - **Hybrid queries**: "Explain mechanical royalties and show José's revenue" → Both systems
 
-**Database Agent Architecture:**
+**Database Agent Architecture with MCP Enhancement:**
 ```
-User Query → Intent Classification → Route Decision
+User Query → MCP-Enhanced Processing → Intent Classification → Route Decision
     ↓
     ├── RAG System (Conceptual/Educational)
     ├── Reference DB + Snowflake (Data Analysis)  
     └── Combined Response (Hybrid queries)
 ```
+
+**MCP (Model Context Protocol) Enhancement Layer:**
+- **Advanced GPT-5-mini Integration**: Low-effort reasoning optimization for faster response times
+- **Enhanced Context Management**: Improved session handling across multiple interaction modes  
+- **Multi-Modal Processing Pipeline**: Unified handling of text, voice, and webhook inputs
+- **Intelligent Response Routing**: Dynamic selection between n8n chat and Telegram interfaces
+- **Session State Normalization**: Consistent data structure across all input sources
+- **Voice Transcription Pipeline**: Seamless voice-to-text with context preservation
 
 **Entity Resolution Pipeline:**
 - **Supabase Reference Tables**: `authors_ref`, `works_ref`, `lookup_values`
@@ -199,6 +209,14 @@ const analyzeMessageType = (message) => {
 ---
 
 ## Key Technical Innovations
+
+### MCP (Model Context Protocol) Enhancement Architecture
+- **GPT-5-mini Integration**: Leverages advanced reasoning capabilities with low-effort optimization for production performance
+- **Multi-Modal Input Normalization**: Unified processing pipeline that standardizes data from n8n chat, Telegram text, Telegram voice, and webhook sources
+- **Context State Management**: Enhanced session handling with consistent data structures across all interaction modes
+- **Voice Processing Pipeline**: Seamless voice transcription with context preservation and metadata inheritance
+- **Intelligent Response Routing**: Dynamic interface selection (n8n vs Telegram) based on source detection and user preferences
+- **Configuration-Driven Architecture**: Centralized config object with debug flags, schema references, and runtime parameters
 
 ### Advanced Multi-Modal Intelligence
 - **Voice processing pipeline**: Telegram voice → file download → Whisper transcription → agent processing

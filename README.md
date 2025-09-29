@@ -87,7 +87,7 @@ GITHUB_TOKEN="your-github-token"
 
 ## 🏗️ Architecture Overview
 
-This project implements a sophisticated **music industry RAG system** that combines document-based knowledge retrieval with real-time database analysis. The system features **hybrid search** (vector similarity + keyword matching), **multi-modal interface** supporting voice and text via Telegram, **intelligent database agent** for revenue/royalty analysis, and **bilingual support** for Spanish and English queries. Built with n8n workflow orchestration, Supabase vector database, and OpenAI models, it serves both human users and autonomous agents with production-grade reliability and auditability.
+This project implements a sophisticated **music industry RAG system** that combines document-based knowledge retrieval with real-time database analysis. The system features **MCP (Model Context Protocol) enhanced orchestration**, **hybrid search** (vector similarity + keyword matching), **multi-modal interface** supporting voice and text via Telegram, **intelligent database agent** for revenue/royalty analysis, and **bilingual support** for Spanish and English queries. Built with n8n workflow orchestration, Supabase vector database, and **advanced GPT-5-mini reasoning**, it serves both human users and autonomous agents with production-grade reliability and auditability.
 
 For detailed technical architecture, implementation patterns, and developer guidance, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
@@ -95,34 +95,44 @@ For detailed technical architecture, implementation patterns, and developer guid
 
 ### N8N Workflows
 
-The system includes 6 main workflows tagged with "PHAM RAG":
+The system includes 9 main workflows tagged with "PHAM RAG":
 
 1. **Database Agent** (`database-agent.json`)
    - Intelligent SQL query generation and execution
    - Natural language to database queries
    - Multi-table relationship handling
 
-2. **Multi Agent** (`multi-agent.json`)  
-   - Orchestrates multiple AI agents
+2. **Multi Agent MCP** (`multi-agent-mcp.json`) ⭐ **NEW**
+   - MCP (Model Context Protocol) enhanced orchestration
+   - Advanced GPT-5-mini reasoning with low-effort optimization
+   - Multi-modal Telegram + n8n chat interface
+   - Enhanced session management and voice transcription
+
+3. **Multi Agent** (`multi-agent.json`)
+   - Standard multi-agent orchestration
    - Task delegation and coordination
    - Complex workflow management
 
-3. **PHAM RAG Basic** (`pham-rag-basic-.json`)
+4. **Multi Agent (Deprecated)** (`multi-agent-deprecated.json`)
+   - Previous version preserved for compatibility
+   - Legacy multi-agent implementation
+
+5. **PHAM RAG Basic** (`pham-rag-basic-.json`)
    - Core RAG implementation
    - Document retrieval and generation
    - Basic question-answering pipeline
 
-4. **Load Documents** (`load-documents.json`)
+6. **Load Documents** (`load-documents.json`)
    - Document ingestion and processing
    - Text extraction and chunking
    - Vector embedding generation
 
-5. **Vector Search** (`vector-search.json`)
+7. **Vector Search** (`vector-search.json`)
    - Semantic similarity search
    - Vector database queries
    - Retrieval optimization
 
-6. **RAG Agent** (`rag-agent.json`)
+8. **RAG Agent** (`rag-agent.json`)
    - Advanced RAG with agent capabilities
    - Context-aware responses
    - Dynamic knowledge retrieval

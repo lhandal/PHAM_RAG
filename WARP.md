@@ -82,10 +82,11 @@ The system implements a sophisticated **query routing architecture** that automa
 3. **Hybrid Approach**: Combines both for comprehensive responses
 
 **Critical Architecture Components:**
-- **N8N Workflow Orchestration**: 6 core workflows handling different aspects of the system
+- **N8N Workflow Orchestration**: 9 core workflows handling different aspects of the system (including MCP-enhanced multi-agent)
 - **Supabase Vector Database**: Document storage, embeddings, hybrid search functions
-- **Snowflake Integration**: Revenue and analytics data warehouse
+- **Snowflake Integration**: Revenue and analytics data warehouse  
 - **Telegram Bot**: Multi-modal interface with voice transcription and intelligent response formatting
+- **MCP Enhancement Layer**: Advanced GPT-5-mini integration with multi-modal input processing
 
 ### Data Flow Architecture
 ```
@@ -114,6 +115,12 @@ User Query → Intent Classification → Route Decision
 - **Intelligent Response Format**: Dynamic selection between text/audio based on content analysis
 - **Session Memory**: User-specific conversation context across sessions
 
+**MCP (Model Context Protocol) Enhancements:**
+- **GPT-5-mini Integration**: Advanced reasoning with low-effort optimization for production performance
+- **Multi-Modal Input Normalization**: Unified processing for n8n chat, Telegram text/voice, and webhook sources
+- **Enhanced Context Management**: Improved session handling with consistent data structures
+- **Intelligent Response Routing**: Dynamic interface selection based on source detection
+
 ## Critical File Locations
 
 ### Configuration Files
@@ -124,7 +131,9 @@ User Query → Intent Classification → Route Decision
 ### N8N Workflows (`n8n/workflows/`)
 All workflows are tagged "PHAM RAG" and include:
 - `database-agent.json` - SQL query generation and execution
-- `multi-agent.json` - Agent orchestration and task delegation  
+- `multi-agent-mcp.json` - **MCP-enhanced orchestration with GPT-5-mini** ⭐
+- `multi-agent.json` - Standard agent orchestration and task delegation
+- `multi-agent-deprecated.json` - Legacy multi-agent (preserved for compatibility)
 - `pham-rag-basic-.json` - Core RAG implementation
 - `load-documents.json` - Document ingestion and processing
 - `vector-search.json` - Semantic similarity search
