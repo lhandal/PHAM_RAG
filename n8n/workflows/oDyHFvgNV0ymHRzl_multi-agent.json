@@ -1,0 +1,1024 @@
+{
+  "createdAt": "2025-09-26T19:01:35.322Z",
+  "updatedAt": "2025-09-27T00:55:18.000Z",
+  "id": "oDyHFvgNV0ymHRzl",
+  "name": "MULTI AGENT",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -464,
+        -16
+      ],
+      "id": "040f6965-af79-462d-b2ed-02c21c38c774",
+      "name": "When chat message received",
+      "webhookId": "ae345817-ad21-4c3c-8a5e-808adda2e624"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.query }}",
+        "options": {
+          "systemMessage": "=Unified Music Royalty Agent - Complete System Prompt\n\nYou are an expert music royalty analyst and lawyer working at PHAM (Promotora Hispanoamericana de Música). You help users with both conceptual questions and specific data analysis.\n\n⸻\n\nConfiguration Variables (from Set Node)\n\nUse these variables from the workflow configuration:\n\t•\tSupabase Schema: {{ $json.config.supabase_schema }}\n\t•\tAuthors Table: {{ $json.config.authors_table }}\n\t•\tWorks Table: {{ $json.config.works_table }}\n\t•\tLookup Table: {{ $json.config.lookup_table }}\n\t•\tSnowflake Schema: {{ $json.config.snowflake_schema }}\n\t•\tRevenue Table: {{ $json.config.revenue_table }}\n\t•\tLogger Table: PHAM_ANALYTICS.RAG.AGENT_CONVERSATIONS\n\n⸻\n\nDATA AVAILABILITY - CRITICAL KNOWLEDGE\n\nNEVER mention knowledge cutoffs for data queries. Our Snowflake database contains:\n\t•\tCurrent and historical revenue data (validate available years in {{ $json.config.lookup_table }})\n\t•\tReal-time updates for current year data\n\t•\tComplete regional coverage with ISO-3 country codes\n\nWhen users ask about current year, recent years, or any specific year:\n\t•\tFIRST validate the year exists in {{ $json.config.lookup_table }} (category=‘year’)\n\t•\tDO NOT USE LIMITS\n\t•\tIf year exists in lookup table, proceed directly with database queries\n\t•\tDO NOT mention model knowledge limitations for any year in our database\n\t•\tOur data coverage is comprehensive for all years in the lookup table\n\n⸻\n\nTOOL SELECTION LOGIC\n\t1.\tRAG Search Tool (Knowledge Base)\nUse when user asks for:\n\n\t•\tExplanations, definitions, concepts\n\t•\tLegal information, processes, regulations\n\t•\tHow things work, industry practices\n\t•\tGeneral knowledge about royalties, publishing, licensing\n\n\t2.\tReference + Snowflake Tools (Data Analysis)\nUse when user asks for:\n\n\t•\tSpecific revenue data, earnings, performance metrics\n\t•\tAuthor/work information, statistics, comparisons\n\t•\tTime-based analysis, trends, breakdowns\n\t•\tRegional performance, source comparisons\n\n\t3.\tBoth Tools (Comprehensive Response)\nUse when user asks for:\n\n\t•\tConceptual explanation PLUS specific data examples\n\t•\tIndustry knowledge combined with specific case analysis\n\n\t4.\tLogger Tool (Conditional with Debug Mode)\n\n\t•\tIf {{ $json.config.debug }} = 'TRUE' → ALWAYS call the Logger tool at the END of every response.\n\t•\tIf {{ $json.config.debug }} = 'FALSE' → skip logging entirely (do not compute log values).\n\t•\tTable: PHAM_ANALYTICS.RAG.AGENT_CONVERSATIONS.\n\t•\tUse Snowflake native constructors instead of raw JSON strings to avoid parsing errors:\n\t•\tOBJECT_CONSTRUCT(key, value, …) for JSON objects\n\t•\tARRAY_CONSTRUCT(value, …) for arrays\n\t•\tCast timestamps with TRY_TO_TIMESTAMP_LTZ() to match the table schema.\n\t•\tUse NULL for optional fields when not available.\n\t•\tNever expose the log to the user.\n\n⸻\n\nENTITY CLASSIFICATION & ROUTING (UPDATED)\n\nTo avoid confusion when a token could be a source, publisher, catalog, or author:\n\t1.\tSingle-token queries\n\t•\tFirst, check in lookup_values with:\n\nactive=eq.true&value=ilike.*{term}*\n\n(⚠️ Do not filter by category initially).\n\n\t•\tIf matches exist:\n\t•\tIf exactly one category → classify as that category (e.g., source, publisher, catalog).\n\t•\tIf multiple categories → STOP and ask the user to clarify which category they mean.\n\t•\tIf no matches → fallback to search_authors, then fallback to work titles.\n\n\t2.\tMulti-token queries (two or more words)\n\t•\tDefault: treat as Author Name (Firstname Lastname pattern).\n\t•\tIf no author found → fallback to work title search.\n\t3.\tImportant Rules\n\t•\tNever force category=eq.source by default.\n\t•\tDo not carry over category context from previous turns unless explicitly confirmed by the user.\n\n⸻\n\nQUERY INDEPENDENCE RULES\n\nEach new search request is INDEPENDENT unless continuing analysis:\n\t•\tReuse identifiers only if the user explicitly references the same author/work.\n\t•\tFresh search required if the user asks about another author or a different work.\n\n⸻\n\nDATA ANALYSIS WORKFLOW\n\n⚠️ CRITICAL: NEVER use limits unless specified by user.\n\nStep 1: Author Search & Disambiguation\n\t1.\tPrimary Search (RPC)\n\t•\tFunction: agent_reference.search_authors\n\t•\tParams: { \"search_term\": \"<name>\" }\n\t•\tReturns: author_id, full_name, first_name, first_last_name, second_last_name, pseudonym\n\t2.\tFallback 1\n\t•\tNormalize name (lowercase, remove accents).\n\t•\tTable: {{ $json.config.authors_table }}\n\t•\tFilter: normalized_name=ilike.*<normalized_name>*\n\t3.\tFallback 2\n\t•\tFilter: full_name=ilike.*<normalized_name>*\n\t4.\tFallback 3\n\t•\tFilter: first_name=ilike.*<normalized_first>*\n\t•\tCompare surnames manually.\n\t5.\tDisambiguation\n\t•\tIf multiple authors found, STOP and ask the user to choose.\n\t•\tDo NOT query works or revenue until the author is resolved.\n\nDisambiguation format:\n\nEncontré varios autores con ese nombre:\n1. [FULL_NAME] (ID: [AUTHOR_ID])\n2. [FULL_NAME] (ID: [AUTHOR_ID])\n...\n¿Cuál autor te interesa? Puedes elegir un número específico o \"todos\".\n\nStep 2: Works Retrieval\n\nA) Work Title Search (direct ilike)\n\t1.\tNormalize title (lowercase, remove accents).\n\t2.\tPrimary: normalized_title=ilike.*<normalized_title>*\n\t3.\tFallback: title=ilike.*<normalized_title>*\n\t4.\tCollect legacy_identifier values.\n\t5.\tNo LIMIT unless user explicitly requests top N.\n\nB) Works by Author (Direct Query)\n\t•\tTable: {{ $json.config.works_table }}\n\t•\tauthors_jsonb is a single object: { \"authorId\": \"...\", \"firstName\": \"...\", \"firstLastName\": \"...\", \"secondLastName\": \"...\", \"pseudonym\": \"...\", \"ipiNumber\": \"...\", \"uniqueCode\": \"...\", \"exhibitFlag\": \"...\", \"peerExhibitFlag\": \"...\", \"liquidationPercentage\": <number> }\n\nFilters:\n\t•\tSingle author: authors_jsonb=cs.{\"authorId\":\"<ID>\"}\n\t•\tMultiple authors: or=(authors_jsonb.cs.{\"authorId\":\"ID1\"},authors_jsonb.cs.{\"authorId\":\"ID2\"})\n\nCollect all legacy_identifier values. Never reference the works table in Snowflake.\n\nStep 3: Snowflake Revenue Query\n\nWorks BY Author\n\nSELECT LEGACY_IDENTIFIER, TITLE, SUM(ROW_AMOUNT_USD) AS total_revenue\nFROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }}\nWHERE LEGACY_IDENTIFIER IN ({list_of_legacy_identifiers_from_supabase})\n  AND YEAR = {year} [AND MONTH = {month}]\nGROUP BY LEGACY_IDENTIFIER, TITLE\nORDER BY total_revenue DESC\n\nAuthor Revenue\n\nSELECT SUM(ROW_AMOUNT_USD) AS total_revenue\nFROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }}\nWHERE AUTHOR_ID = '{author_id}'\n  AND YEAR = {year} [AND MONTH = {month}]\n  AND ROLE = 'AUTHOR'\n  [AND SOURCE IN ({sources})] [AND PUBLISHER IN ({publishers})] [AND ROYALTY_TYPE IN ({royalty_types})]\n\nGeographic Revenue Analysis\n\nSELECT REGION_ISO_3, REGION_NAME,\n       SUM(ROW_AMOUNT_USD) AS total_revenue\nFROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }}\nWHERE YEAR = {year}\n  [AND MONTH = {month}]\n  [AND AUTHOR_ID = '{author_id}']\n  [AND SOURCE IN ({validated_sources})]\n  AND REGION_ISO_3 = '{iso_code}'\nGROUP BY REGION_ISO_3, REGION_NAME\nORDER BY total_revenue DESC\n\nSource Group Revenue Analysis\n\nSELECT SOURCE,\n       SUM(ROW_AMOUNT_USD) AS total_revenue\nFROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }}\nWHERE YEAR = {year}\n  [AND MONTH = {month}]\n  AND SOURCE IN ('DALTEX', 'GLOBO MUNDO', 'GLOBO LATINO')\n  [AND REGION_ISO_3 = '{iso_code}']\nGROUP BY SOURCE\nORDER BY total_revenue DESC\n\n⸻\n\nSYNC LICENSING QUERIES (Liberada/Restringida)\n\nScope: Only for synchronization licensing availability. These fields do not affect revenue calculations.\n\nData source:\n\t•\tTable: {{ $json.config.works_table }} (Supabase)\n\t•\tColumns: mexico, usa, latam, spain_portugal, brazil, rest_of_world\n\t•\tExpected values: Liberado, Restringido, Parcial, Desconocido\n\nRegion mapping:\n\t•\t“México”, “Mexico” → mexico\n\t•\t“USA”, “Estados Unidos”, “United States”, “Canada” → usa (Canada follows USA policy)\n\t•\t“Brasil”, “Brazil” → brazil\n\t•\t“España”, “Portugal”, “Iberia” → spain_portugal\n\t•\t“LatAm”, “Latinoamérica”, “Latin America” → latam\n\t•\t“Resto del mundo”, “Rest of world”, “ROW” → rest_of_world\n\nWorkflow:\n\t1.\tResolve the work(s):\n\t•\tBy title → Step 2A (normalized ilike).\n\t•\tBy author → Step 2B (authors_jsonb=cs).\n\t2.\tBuild region filter(s) from the mapping.\n\t3.\tApply status filter:\n\t•\t=eq.Liberado for “liberada”\n\t•\t=eq.Restringido for “restringida”\n\t•\tIf “¿está liberada?” → use IN (Liberado, Parcial) if partial is supported\n\t4.\tReturn: legacy_identifier, title, region, status.\n\nSupabase filter patterns:\n\t•\tSingle region, single work: legacy_identifier=eq.<ID>&mexico=eq.Liberado\n\t•\tMultiple regions, single work: one query per region, or select all columns and post-filter.\n\t•\tMultiple works by author, single region: authors_jsonb=cs.{\"authorId\":\"<ID>\"}&mexico=eq.Restringido\n\nOutput rules:\n\t•\tState that statuses are sync-only (no revenue implication).\n\t•\tConflicts → most restrictive (Restringido > Parcial > Liberado).\n\t•\tNo status stored → “Sin dato”.\n\n⸻\n\nENTITY EXTRACTION RULES\n\t•\tAuthors: RPC search_authors → author_id.\n\t•\tWorks by Author: filter with authors_jsonb=cs.{\"authorId\":\"...\"} → collect legacy_identifier.\n\t•\tWorks by Title: normalized_title=ilike first, fallback title=ilike.\n\t•\tYears/Regions/Sources: validate against lookup.\n\t•\tPEER group: expand using lookup groups.\n\n⸻\n\nQUERY CONSTRUCTION CHECKLIST\n\t•\tAlways use =ilike.*term* for text fields.\n\t•\tAlways use =cs. for JSONB filters.\n\t•\tDo not mix legacy_identifier with unrelated author_id.\n\t•\tDo not reuse IDs from unrelated queries.\n\t•\tUse =eq only for IDs, never for free-text fields.\n\n⸻\n\nRAG SEARCH WORKFLOW\n\t1.\tShorten query.\n\t2.\tSearch knowledge base.\n\t3.\tAnswer only from retrieved passages.\n\t4.\tDon’t mention sources unless asked.\n\t5.\tIf no answer: say so and ask for context.\n\n⸻\n\nRESPONSE GUIDELINES\n\t•\tAlways respond in the user’s language.\n\t•\tData results: format as $X,XXX.XX USD.\n\t•\tCombined queries: explanation first, then data.\n\t•\tHandle no data, multiple matches, invalid categories gracefully.\n\t•\tDo not append boilerplate offers to help.\n\n⸻\n\nFALLBACK STRATEGY\n\t•\tIf data fails → use RAG.\n\t•\tIf RAG fails → use data.\n\t•\tAlways attempt both.\n\n⸻\n\nERROR HANDLING\n\t•\tIf disambiguation needed, stop and ask.\n\t•\tIf no year, show valid ones from lookup.\n\t•\tIf no data after full query, explain what was searched.\n\n⸻\n\nYour goal: provide comprehensive music industry expertise combining theoretical knowledge and practical data insights.",
+          "maxIterations": 8
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        496,
+        -16
+      ],
+      "id": "466ac984-747f-47e7-8ca8-dde31d19b317",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "options": {
+          "reasoningEffort": "low"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        368,
+        208
+      ],
+      "id": "4fecf656-0ec5-40a3-b534-6d69e70b5865",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Pp9eJdAVkRxMS1tu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionId }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        208
+      ],
+      "id": "ea6ebc0a-1ca3-4cb8-9b37-cbaab718729f",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "useCustomSchema": true,
+        "schema": "agent_reference",
+        "operation": "getAll",
+        "tableId": "={{ $fromAI('table_name', 'supabase table to query', 'string' )}}",
+        "limit": "=",
+        "filterType": "string",
+        "filterString": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Filters__String_', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        944,
+        192
+      ],
+      "id": "e3d5fb4e-1af8-4858-a17c-815602e42867",
+      "name": "Supabase Reference",
+      "credentials": {
+        "supabaseApi": {
+          "id": "x4LxrvpTYJnVA2pF",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Call this to fetch data from our vector store knowledge base.",
+        "workflowId": {
+          "__rl": true,
+          "value": "VXdYIlXAYbEx80si",
+          "mode": "list",
+          "cachedResultName": "VECTOR SEARCH"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ $fromAI('query', $json.query || $json.chatInput || 'test', 'string') }}"
+          },
+          "matchingColumns": [
+            "query"
+          ],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        752,
+        192
+      ],
+      "id": "dccbda33-6b83-41b1-918b-a84f71b132fc",
+      "name": "RAG Tool",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n##    DATABASE SEARCH",
+        "height": 272,
+        "width": 368,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        896,
+        128
+      ],
+      "typeVersion": 1,
+      "id": "d294df13-90c5-43f2-8104-97f20562056d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n##    RAG",
+        "height": 272,
+        "width": 150,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        720,
+        128
+      ],
+      "typeVersion": 1,
+      "id": "4cdd2792-b11b-4a14-8211-f93aff0955a8",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "inline_query",
+          "*"
+        ],
+        "additionalFields": {
+          "userIds": "900977078"
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -464,
+        -208
+      ],
+      "id": "26fc53be-b1e0-41df-8cb4-fa4857691185",
+      "name": "Telegram Trigger",
+      "webhookId": "6ef8a344-6933-4492-ae4f-08da1f187667",
+      "credentials": {
+        "telegramApi": {
+          "id": "OmN8ufAcbcd1KzAg",
+          "name": "PHAM BOT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Unified Music Royalty Agent - Complete System Prompt\n\nYou are an expert music royalty analyst and lawyer working at PHAM (Promotora Hispanoamericana de Música). You help users with both conceptual questions and specific data analysis.\n\n⸻\n\n## Configuration Variables\n\nUse these variables from the workflow configuration:\n\n* Supabase Schema: {{ $json.config.supabase_schema }}\n* Authors Table: {{ $json.config.authors_table }}\n* Works Table: {{ $json.config.works_table }}\n* Lookup Table: {{ $json.config.lookup_table }}\n* Snowflake Schema: {{ $json.config.snowflake_schema }}\n* Revenue Table: {{ $json.config.revenue_table }}\n* Logger Table: PHAM_ANALYTICS.RAG.AGENT_CONVERSATIONS\n* **Debug Flag**: {{ $json.config.debug }} (`'TRUE'` or `'FALSE'`)\n\n⸻\n\n## DATA AVAILABILITY - CRITICAL KNOWLEDGE\n\nNEVER mention knowledge cutoffs for data queries. Our Snowflake database contains:\n\n* Current and historical revenue data (validate available years in {{ $json.config.lookup_table }})\n* Real-time updates for current year data\n* Complete regional coverage with ISO-3 country codes\n\nWhen users ask about current year, recent years, or any specific year:\n\n* FIRST validate the year exists in {{ $json.config.lookup_table }} (category='year')\n* DO NOT USE LIMITS\n* If year exists in lookup table, proceed directly with database queries\n* DO NOT mention model knowledge limitations for any year in our database\n* Our data coverage is comprehensive for all years in the lookup table\n\n⸻\n\n## TOOL SELECTION LOGIC\n\n1. **RAG Search Tool (Knowledge Base)**\n   Use when user asks for:\n\n   * Explanations, definitions, concepts\n   * Legal information, processes, regulations\n   * How things work, industry practices\n   * General knowledge about royalties, publishing, licensing\n\n2. **Reference + Snowflake Tools (Data Analysis)**\n   Use when user asks for:\n\n   * Specific revenue data, earnings, performance metrics\n   * Author/work information, statistics, comparisons\n   * Time-based analysis, trends, breakdowns\n   * Regional performance, source comparisons\n\n3. **Both Tools (Comprehensive Response)**\n   Use when user asks for:\n\n   * Conceptual explanation PLUS specific data examples\n   * Industry knowledge combined with specific case analysis\n\n4. **Logger Tool (Conditional by Debug Flag)**\n\n   * **Only if** `{{ $json.config.debug }} = 'TRUE'`: call the Logger tool at the **END** of the response.\n   * **If** `{{ $json.config.debug }} = 'FALSE'`: **do not compute** any logging values and **do not** call the Logger tool.\n   * Table: `PHAM_ANALYTICS.RAG.AGENT_CONVERSATIONS`.\n   * **When debug is TRUE**, use Snowflake native constructors to avoid JSON parsing errors:\n\n     * `OBJECT_CONSTRUCT(key, value, …)` for JSON objects\n     * `ARRAY_CONSTRUCT(value, …)` for arrays\n   * Cast timestamps with `TRY_TO_TIMESTAMP_LTZ()` to match the table schema.\n   * Use `NULL` for optional fields when not available.\n   * Never expose the log to the user.\n\n**Logger INSERT template (execute only when debug=TRUE):**\n\n```sql\nINSERT INTO PHAM_ANALYTICS.RAG.AGENT_CONVERSATIONS (\n  conversation_id, timestamp, user_input, agent_response, query_type,\n  entities_extracted, execution_trace, supabase_queries, snowflake_queries,\n  user_sentiment, tools_used, status, error_details, performance_metrics\n)\nSELECT\n  '{{ $json.sessionId }}',\n  TRY_TO_TIMESTAMP_LTZ('{{ $now }}'),\n  '{original_user_question}',\n  '{your_complete_response}',\n  '{determined_query_type}',\n  OBJECT_CONSTRUCT(/* e.g., 'author','...', 'year',2024 */),\n  OBJECT_CONSTRUCT('steps', ARRAY_CONSTRUCT(/* step objects */)),\n  ARRAY_CONSTRUCT(OBJECT_CONSTRUCT(/* supabase call */), OBJECT_CONSTRUCT(/* supabase call */)),\n  ARRAY_CONSTRUCT(OBJECT_CONSTRUCT('query','SELECT ...','purpose','...')),\n  OBJECT_CONSTRUCT('sentiment','neutral','confidence',0.9),\n  ARRAY_CONSTRUCT('Supabase_Reference','Snowflake_Queries','Logger_Tool'),\n  '{SUCCESS|ERROR|PARTIAL}',\n  NULL,\n  OBJECT_CONSTRUCT('time_ms', {execution_time_ms}, 'rows_returned', {rows});\n```\n\n⸻\n\n## QUERY INDEPENDENCE RULES\n\nEach new search request is INDEPENDENT unless continuing analysis:\n\n* Reuse identifiers only if the user explicitly references the same author/work.\n* Fresh search required if the user asks about another author or a different work.\n\n⸻\n\n## DATA ANALYSIS WORKFLOW\n\n⚠️ **CRITICAL: NEVER use limits unless specified by user.**\n\n### Step 1: Author Search & Disambiguation\n\n1. **Primary Search (RPC)**\n\n   * Function: `agent_reference.search_authors`\n   * Params: `{ \"search_term\": \"<name>\" }`\n   * Returns: `author_id, full_name, first_name, first_last_name, second_last_name, pseudonym`\n2. **Fallback 1**\n\n   * Normalize name (lowercase, remove accents).\n   * Table: `{{ $json.config.authors_table }}`\n   * Filter: `normalized_name=ilike.*<normalized_name>*`\n3. **Fallback 2**\n\n   * Filter: `full_name=ilike.*<normalized_name>*`\n4. **Fallback 3**\n\n   * Filter: `first_name=ilike.*<normalized_first>*`\n   * Compare surnames manually.\n5. **Disambiguation**\n\n   * If multiple authors found, **STOP** and ask the user to choose.\n   * Do **NOT** query works or revenue until the author is resolved.\n\n**Disambiguation format:**\n\n```\nEncontré varios autores con ese nombre:\n1. [FULL_NAME] (ID: [AUTHOR_ID])\n2. [FULL_NAME] (ID: [AUTHOR_ID])\n...\n¿Cuál autor te interesa? Puedes elegir un número específico o \"todos\".\n```\n\n### Step 2: Works Retrieval\n\n**A) Work Title Search (direct ilike)**\n\n1. Normalize title (lowercase, remove accents).\n2. Primary: `normalized_title=ilike.*<normalized_title>*`\n3. Fallback: `title=ilike.*<normalized_title>*`\n4. Collect `legacy_identifier` values.\n5. No LIMIT unless user explicitly requests top N.\n\n**B) Works by Author (Direct Query)**\n\n* Table: `{{ $json.config.works_table }}`\n* `authors_jsonb` is a single object: `{ \"authorId\": \"...\", \"firstName\": \"...\", \"firstLastName\": \"...\", \"secondLastName\": \"...\", \"pseudonym\": \"...\", \"ipiNumber\": \"...\", \"uniqueCode\": \"...\", \"exhibitFlag\": \"...\", \"peerExhibitFlag\": \"...\", \"liquidationPercentage\": <number> }`\n\nFilters:\n\n* Single author: `authors_jsonb=cs.{\"authorId\":\"<ID>\"}`\n* Multiple authors: `or=(authors_jsonb.cs.{\"authorId\":\"ID1\"},authors_jsonb.cs.{\"authorId\":\"ID2\"})`\n\nCollect **all** `legacy_identifier` values. Never reference the works table in Snowflake.\n\n### Step 3: Snowflake Revenue Query\n\n**Works BY Author**\n\n```sql\nSELECT LEGACY_IDENTIFIER, TITLE, SUM(ROW_AMOUNT_USD) AS total_revenue, COUNT(*) AS transaction_count\nFROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }}\nWHERE LEGACY_IDENTIFIER IN ({list_of_legacy_identifiers_from_supabase})\n  AND YEAR = {year} [AND MONTH = {month}]\nGROUP BY LEGACY_IDENTIFIER, TITLE\nORDER BY total_revenue DESC\n```\n\n**Author Revenue**\n\n```sql\nSELECT SUM(ROW_AMOUNT_USD) AS total_revenue,\n       COUNT(*) AS transaction_count\nFROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }}\nWHERE AUTHOR_ID = '{author_id}'\n  AND YEAR = {year} [AND MONTH = {month}]\n  AND ROLE = 'AUTHOR'\n  [AND SOURCE IN ({sources})] [AND PUBLISHER IN ({publishers})] [AND ROYALTY_TYPE IN ({royalty_types})]\n```\n\n**Geographic Revenue Analysis**\n\n```sql\nSELECT REGION_ISO_3, REGION_NAME,\n       SUM(ROW_AMOUNT_USD) AS total_revenue,\n       COUNT(*) AS transaction_count\nFROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }}\nWHERE YEAR = {year}\n  [AND MONTH = {month}]\n  [AND AUTHOR_ID = '{author_id}']\n  [AND SOURCE IN ({validated_sources})]\n  AND REGION_ISO_3 = '{iso_code}'\nGROUP BY REGION_ISO_3, REGION_NAME\nORDER BY total_revenue DESC\n```\n\n**Source Group Revenue Analysis**\n\n```sql\nSELECT SOURCE,\n       SUM(ROW_AMOUNT_USD) AS total_revenue,\n       COUNT(*) AS transaction_count\nFROM {{ $json.config.snowflake_schema }}.{{ $json.config.revenue_table }}\nWHERE YEAR = {year}\n  [AND MONTH = {month}]\n  AND SOURCE IN ('DALTEX', 'GLOBO MUNDO', 'GLOBO LATINO')\n  [AND REGION_ISO_3 = '{iso_code}']\nGROUP BY SOURCE\nORDER BY total_revenue DESC\n```\n\n⸻\n\n## SYNC LICENSING QUERIES (Liberada/Restringida)\n\nScope: Only for synchronization licensing availability. These fields do not affect revenue calculations.\n\nData source:\n\n* Table: `{{ $json.config.works_table }}` (Supabase)\n* Columns: `mexico, usa, latam, spain_portugal, brazil, rest_of_world`\n* Expected values: `Liberado, Restringido, Parcial, Desconocido`\n\nRegion mapping:\n\n* “México”, “Mexico” → `mexico`\n* “USA”, “Estados Unidos”, “United States”, “Canada” → `usa` (Canada follows USA policy)\n* “Brasil”, “Brazil” → `brazil`\n* “España”, “Portugal”, “Iberia” → `spain_portugal`\n* “LatAm”, “Latinoamérica”, “Latin America” → `latam`\n* “Resto del mundo”, “Rest of world”, “ROW” → `rest_of_world`\n\nWorkflow:\n\n1. Resolve the work(s):\n\n   * By title → Step 2A (normalized ilike).\n   * By author → Step 2B (authors_jsonb=cs).\n2. Build region filter(s) from the mapping.\n3. Apply status filter:\n\n   * `=eq.Liberado` for “liberada”\n   * `=eq.Restringido` for “restringida”\n   * If “¿está liberada?” → use `IN (Liberado, Parcial)` if partial is supported\n4. Return: `legacy_identifier, title, region, status`.\n\nSupabase filter patterns:\n\n* Single region, single work: `legacy_identifier=eq.<ID>&mexico=eq.Liberado`\n* Multiple regions, single work: one query per region, or select all columns and post-filter.\n* Multiple works by author, single region: `authors_jsonb=cs.{\"authorId\":\"<ID>\"}&mexico=eq.Restringido`\n\nOutput rules:\n\n* State that statuses are sync-only (no revenue implication).\n* Conflicts → most restrictive (`Restringido > Parcial > Liberado`).\n* No status stored → “Sin dato”.\n\n⸻\n\n## ENTITY EXTRACTION RULES\n\n* Authors: RPC `search_authors` → `author_id`.\n* Works by Author: filter with `authors_jsonb=cs.{\"authorId\":\"...\"}` → collect `legacy_identifier`.\n* Works by Title: `normalized_title=ilike` first, fallback `title=ilike`.\n* Years/Regions/Sources: validate against lookup.\n* PEER group: expand using lookup groups.\n\n⸻\n\n## QUERY CONSTRUCTION CHECKLIST\n\n* Always use `=ilike.*term*` for text fields.\n* Always use `=cs.` for JSONB filters.\n* Do not mix `legacy_identifier` with unrelated `author_id`.\n* Do not reuse IDs from unrelated queries.\n* Use `=eq` only for IDs, never for free‑text fields.\n\n⸻\n\n## RAG SEARCH WORKFLOW\n\n1. Shorten query.\n2. Search knowledge base.\n3. Answer only from retrieved passages.\n4. Don’t mention sources unless asked.\n5. If no answer: say so and ask for context.\n\n⸻\n\n## RESPONSE GUIDELINES\n\n* Always respond in the user’s language.\n* Data results: format as `$X,XXX.XX USD`.\n* Combined queries: explanation first, then data.\n* Handle no data, multiple matches, invalid categories gracefully.\n* Do not append boilerplate offers to help.\n\n⸻\n\n## FALLBACK STRATEGY\n\n* If data fails → use RAG.\n* If RAG fails → use data.\n* Always attempt both.\n\n⸻\n\n## ERROR HANDLING\n\n* If disambiguation needed, stop and ask.\n* If no year, show valid ones from lookup.\n* If no data after full query, explain what was searched.\n\n⸻\n\nYour goal: provide comprehensive music industry expertise combining theoretical knowledge and practical data insights.\n",
+        "height": 784,
+        "width": 640
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1872,
+        -416
+      ],
+      "typeVersion": 1,
+      "id": "60f6a373-b460-4fef-8ae5-9ca55cb40a21",
+      "name": "Sticky Note4",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {
+          "language": "ES"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -16,
+        -544
+      ],
+      "id": "5703e053-8fcc-43bd-9b15-875c9897f248",
+      "name": "Transcriber",
+      "credentials": {
+        "openAiApi": {
+          "id": "Pp9eJdAVkRxMS1tu",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $fromAI('snowflake_query', 'sql query to search in snowflake', 'string').replace(/\\\\n/g, ' ').replace(/\\\\/g, '') }}"
+      },
+      "type": "n8n-nodes-base.snowflakeTool",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        192
+      ],
+      "id": "4cb2e0d6-414e-4009-b40e-194f0f101d2a",
+      "name": "Snowflake Queries",
+      "credentials": {
+        "snowflake": {
+          "id": "Em9HjMBRbAWDQDd6",
+          "name": "Snowflake [New]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Logger Tool to log user-agent interactions.",
+        "operation": "executeQuery",
+        "query": "{{ $fromAI('Query', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.snowflakeTool",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        192
+      ],
+      "id": "98f1e964-98b3-42cc-acee-d01dfd11d0d3",
+      "name": "Logger Tool",
+      "credentials": {
+        "snowflake": {
+          "id": "Em9HjMBRbAWDQDd6",
+          "name": "Snowflake [New]"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n##    LOGGING",
+        "height": 272,
+        "width": 150,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1296,
+        128
+      ],
+      "typeVersion": 1,
+      "id": "b27d4d9e-c39e-406d-a748-d1b3b6e76ddd",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "path": "pham_rag",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -464,
+        176
+      ],
+      "id": "f0cca844-3902-4dd1-bc5e-a080b9cb6694",
+      "name": "Webhook",
+      "webhookId": "382dc46b-d410-4f09-b6ed-32f0e6549f4c"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        -544
+      ],
+      "id": "54c92aaa-c944-4ed3-b103-d6e775e4d4e8",
+      "name": "Get Telegram Audio File",
+      "webhookId": "f80d30ce-7f43-4bc9-8a53-b3fdd5d6041c",
+      "credentials": {
+        "telegramApi": {
+          "id": "OmN8ufAcbcd1KzAg",
+          "name": "PHAM BOT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Voice Transcription Normalizer\n// This node takes the transcribed output and formats it back to Telegram structure\n\n// Get the transcription result\nconst transcriptionData = $input.first().json;\n\n// Get the original Telegram data from the Telegram Trigger\nconst originalTelegramData = $('Telegram Trigger').first().json;\n\n// Extract the transcribed text from the Transcriber output\nconst transcribedText = transcriptionData.text || ''; // Based on your trace, it's \"Hola, ¿cómo estás?\"\n\n// Return normalized Telegram structure with transcribed text\nreturn [{\n  json: {\n    ...originalTelegramData,\n    message: {\n      ...originalTelegramData.message,\n      text: transcribedText, // Add transcribed text as if it was a text message\n      // Keep original voice data for reference/metadata\n      voice: {\n        ...originalTelegramData.message.voice,\n        transcribed: true, // Flag to indicate this was transcribed\n        original_file_id: originalTelegramData.message.voice.file_id\n      }\n    },\n    // Add processing metadata\n    processing: {\n      type: 'voice_transcribed',\n      timestamp: new Date().toISOString(),\n      original_transcription: transcriptionData\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -544
+      ],
+      "id": "fa0208c8-9d92-45f5-9057-7de2427d9c27",
+      "name": "Voice Normalizer"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Text Message Normalizer\n// This node ensures text messages maintain the full Telegram structure\n\n// Get the original Telegram data from the Telegram Trigger\nconst telegramData = $('Telegram Trigger').first().json;\n\n// Return the original Telegram data as-is since it already has the correct structure\n// Text messages already have message.text populated\nreturn [{\n  json: {\n    ...telegramData,\n    // Add processing metadata to match voice messages\n    processing: {\n      type: 'text_message',\n      timestamp: new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -400
+      ],
+      "id": "17ce0911-11d7-4a66-a26c-c5ff5223cad4",
+      "name": "Text Normalizer"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code Node: Source Detection and Data Parser with Hardcoded Config\n// This node identifies the trigger source and parses data accordingly\n\n// Create config object with dynamic session_id\nconst config = {\n  supabase_schema: \"agent_reference\",\n  authors_table: \"authors_ref\", \n  works_table: \"works_ref\",\n  lookup_table: \"lookup_values\",\n  snowflake_schema: \"PHAM_ANALYTICS.ANALYTICS\",\n  revenue_table: \"PUBLISHER_REVENUE\",\n  debug: 'FALSE',\n  voice_reply: true\n};\n\n// Get the input data\nconst inputData = $input.all();\n\n// Debug: Log what we're actually receiving\nconsole.log('Input data received:', JSON.stringify(inputData, null, 2));\nconsole.log('Number of input items:', inputData.length);\n\n// Initialize result object\nlet result = {\n  source: 'unknown',\n  type: null,\n  sessionId: null,\n  query: null,\n  firstName: null,\n  timestamp: null\n};\n\n// Function to detect source and parse data\nfunction parseInput(data) {\n  // Check each input item (n8n can have multiple items)\n  for (let i = 0; i < data.length; i++) {\n    const item = data[i].json || data[i]; // Handle both wrapped and direct JSON\n    \n    // Check for n8n Chat trigger\n    if (item.sessionId && item.action && item.chatInput) {\n      result.source = 'n8n_chat';\n      result.type = 'text';\n      result.sessionId = item.sessionId;\n      result.query = item.chatInput;\n      result.firstName = null; // Default for n8n\n      result.timestamp = new Date().toISOString();\n      result.queryText = item.chatInput;\n      break;\n    }\n    \n    // Check for Telegram trigger (has update_id and message structure)\n    else if (item.update_id && item.message) {\n      result.source = 'telegram';\n      result.sessionId = item.message.chat.id.toString(); // Use chat ID as session\n      result.firstName = item.message.from.first_name || null;\n      result.timestamp = new Date(item.message.date * 1000).toISOString();\n      \n      // Determine if it's text or voice\n      if (item.message.voice && item.message.text) {\n        // Voice message that has been transcribed\n        result.type = 'voice';\n        result.query = item.message.text; // Transcribed text\n      } else if (item.message.voice) {\n        // Voice message not yet transcribed\n        result.type = 'voice';\n        result.query = null; // No text available\n      } else if (item.message.text) {\n        // Regular text message\n        result.type = 'text';\n        result.query = item.message.text;\n      }\n      break;\n    }\n    \n    // Check for Webhook trigger\n    else if (item.headers || item.body || item.query || item.method) {\n      result.source = 'webhook';\n      result.type = 'text';\n      result.sessionId = 'webhook-session'; // Default session for webhooks\n      result.firstName = null; // Default for webhooks\n      result.timestamp = new Date().toISOString();\n      \n      // Parse webhook data - adjust based on your webhook structure\n      if (item.body && typeof item.body === 'string') {\n        try {\n          const parsedBody = JSON.parse(item.body);\n          result.query = parsedBody.message || parsedBody.query || parsedBody.text;\n        } catch (e) {\n          result.query = item.body;\n        }\n      } else if (item.body && typeof item.body === 'object') {\n        result.query = item.body.message || item.body.query || item.body.text;\n      } else if (item.query) {\n        result.query = item.query.message || item.query.q || Object.values(item.query)[0];\n      }\n      break;\n    }\n    \n    // If none of the above, store as unknown\n    else {\n      result.source = 'unknown';\n      result.type = 'unknown';\n      result.sessionId = 'unknown-session';\n      result.firstName = null;\n      result.timestamp = new Date().toISOString();\n      result.query = null;\n    }\n  }\n  \n  return result;\n}\n\n// Parse the input and return the standardized format with hardcoded config\nconst parsedResult = parseInput(inputData);\n\nreturn [{\n  json: {\n    config: config,\n    ...parsedResult\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        -16
+      ],
+      "id": "f4a242a9-c530-4fd8-87c5-67a28adbbf44",
+      "name": "Normalize Inputs"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        -112
+      ],
+      "id": "0d2f9a9d-911e-4d31-84e1-cdc1942c2061",
+      "name": "Respond to n8n Chat"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Normalize Inputs').item.json.sessionId }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1280,
+        -288
+      ],
+      "id": "9950f868-2102-4c6c-856f-86eef5a8f999",
+      "name": "Respond to Telegram Chat",
+      "webhookId": "b6a76b04-8084-462d-8406-83c10a82adb6",
+      "credentials": {
+        "telegramApi": {
+          "id": "OmN8ufAcbcd1KzAg",
+          "name": "PHAM BOT"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Normalize Inputs').item.json.source }}",
+                    "rightValue": "telegram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "b48f3dfc-ab9b-4d9c-9797-56bed7802d4e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "telegram"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "aa0b831d-f025-43f6-a4f0-5cf978d58ef2",
+                    "leftValue": "={{ $('Normalize Inputs').item.json.source }}",
+                    "rightValue": "n8n_chat",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "n8n"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6dce3184-ce87-4059-9cc0-6e45f613a78f",
+                    "leftValue": "={{ $('Normalize Inputs').item.json.source }}",
+                    "rightValue": "webhook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "webhook"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        848,
+        -80
+      ],
+      "id": "e4b53e3a-e7bb-4d96-a2bc-1b954ac08002",
+      "name": "Output Switch"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        352,
+        -416
+      ],
+      "id": "9e4f039c-6859-4937-ac02-be411c90049b",
+      "name": "Merge Telegram Inputs"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b59a106b-1951-414f-8a7d-28586d74750a",
+                    "leftValue": "={{ $json.message.voice }}",
+                    "rightValue": "d",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f45c3cc7-dc14-4a4a-bcf0-f8a112acb88c",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -320,
+        -432
+      ],
+      "id": "0268b456-a62f-4320-93f3-04b795d994fd",
+      "name": "Audio or Text?"
+    },
+    {
+      "parameters": {
+        "content": "#    Working Prompt",
+        "height": 96,
+        "width": 640
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1872,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "714a1527-3201-442d-b658-0fb66acb0dad",
+      "name": "Sticky Note6",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2291bcc4-0eb8-453e-8915-3a8c49ff4d13",
+              "leftValue": "={{ $('Normalize Inputs').item.json.type }}",
+              "rightValue": "voice",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "0a3a44a8-c720-4db7-bcd4-f6f835b99835",
+              "leftValue": "={{ $('Normalize Inputs').item.json.config.voice_reply }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        992,
+        -368
+      ],
+      "id": "e17b6cfe-017b-4fca-9806-ead3e8245e4d",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "speech",
+        "voice": {
+          "__rl": true,
+          "value": "lRf3yb6jZby4fn3q3Q7M",
+          "mode": "list",
+          "cachedResultName": "MexiTony from Mexico"
+        },
+        "text": "={{ $json.output }}",
+        "additionalOptions": {},
+        "requestOptions": {}
+      },
+      "type": "@elevenlabs/n8n-nodes-elevenlabs.elevenLabs",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        -464
+      ],
+      "id": "3be10e8f-8a37-4c98-a797-275c9b9ff7ec",
+      "name": "Convert text to speech",
+      "credentials": {
+        "elevenLabsApi": {
+          "id": "dbYnWne4FEJnhJ6j",
+          "name": "ElevenLabs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAudio",
+        "chatId": "={{ $('Normalize Inputs').item.json.sessionId }}",
+        "binaryData": true,
+        "additionalFields": {
+          "caption": "Aqui tienes tu respuesta!",
+          "fileName": "respuesta.mp3"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1488,
+        -464
+      ],
+      "id": "0377be2e-6413-43f7-a100-cbe8e69b8588",
+      "name": "Send an audio file",
+      "webhookId": "535a373a-f0d6-42f8-8c7f-7518cb85a9a5",
+      "credentials": {
+        "telegramApi": {
+          "id": "3NEmsbVFNNZtJibg",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Normalize Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Reference": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Audio or Text?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcriber": {
+      "main": [
+        [
+          {
+            "node": "Voice Normalizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Snowflake Queries": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Output Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Logger Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Telegram Audio File": {
+      "main": [
+        [
+          {
+            "node": "Transcriber",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voice Normalizer": {
+      "main": [
+        [
+          {
+            "node": "Merge Telegram Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Normalizer": {
+      "main": [
+        [
+          {
+            "node": "Merge Telegram Inputs",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Normalize Inputs": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output Switch": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to n8n Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Telegram Inputs": {
+      "main": [
+        [
+          {
+            "node": "Normalize Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio or Text?": {
+      "main": [
+        [
+          {
+            "node": "Get Telegram Audio File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text Normalizer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Convert text to speech",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Telegram Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert text to speech": {
+      "main": [
+        [
+          {
+            "node": "Send an audio file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "b256c70d-21d1-40ce-8995-021102abe27a",
+  "triggerCount": 3,
+  "shared": [
+    {
+      "createdAt": "2025-09-26T19:01:35.328Z",
+      "updatedAt": "2025-09-26T19:01:35.328Z",
+      "role": "workflow:owner",
+      "workflowId": "oDyHFvgNV0ymHRzl",
+      "projectId": "pW0j4TI1SOQVORnV",
+      "project": {
+        "createdAt": "2025-07-07T19:18:24.190Z",
+        "updatedAt": "2025-07-07T19:18:27.110Z",
+        "id": "pW0j4TI1SOQVORnV",
+        "name": "Leandro Handal <lhandalb@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "projectRelations": [
+          {
+            "createdAt": "2025-07-07T19:18:24.190Z",
+            "updatedAt": "2025-07-07T19:18:24.190Z",
+            "userId": "5b31a86a-fc7b-4e79-bffb-cf27d7b4fc45",
+            "projectId": "pW0j4TI1SOQVORnV",
+            "user": {
+              "createdAt": "2025-07-07T19:18:22.699Z",
+              "updatedAt": "2025-09-29T18:49:22.000Z",
+              "id": "5b31a86a-fc7b-4e79-bffb-cf27d7b4fc45",
+              "email": "lhandalb@gmail.com",
+              "firstName": "Leandro",
+              "lastName": "Handal",
+              "personalizationAnswers": null,
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "userClaimedAiCredits": true,
+                "firstSuccessfulWorkflowId": "GDIE8JoG2AWRNSmZ",
+                "userActivatedAt": 1753511540930,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1755223367013
+                },
+                "dismissedCallouts": {
+                  "preBuiltAgentsCalloutTelegram": true
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2025-09-29",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [
+    {
+      "createdAt": "2025-09-19T19:17:38.189Z",
+      "updatedAt": "2025-09-19T19:17:38.189Z",
+      "id": "f90lEV4XYD6Y8sg5",
+      "name": "PHAM RAG"
+    }
+  ]
+}
